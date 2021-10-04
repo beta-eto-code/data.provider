@@ -1,0 +1,24 @@
+{
+  "name": "beta/data.provider",
+  "description": "Some data provider implementation",
+  "type": "lib",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Alexander Nesterov",
+      "email": "alex19pov31@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.2",
+    "ext-json": "*",
+    "ext-pdo": "*",
+    "ext-simplexml": "*",
+    "ext-dom": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Data\\Provider\\": "src/"
+    }
+  }
+}
