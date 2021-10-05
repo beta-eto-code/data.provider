@@ -36,8 +36,8 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     {
         $querySelect = $queryCriteria->getSelect();
         if (empty($querySelect)) {
-            $sql = $usePlaceholder ? "SELECT * FROM {$this->placeholder}" : "SELECT * FROM {$tableName}";
-            return new SqlQuery($sql, [$tableName], ['tableName']);
+            $sql = "SELECT * FROM {$tableName}";
+            return new SqlQuery($sql);
         }
 
         $fieldStrList = [];
@@ -49,16 +49,10 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             }
         }
 
-        $strSelect = $usePlaceholder ?
-            implode(', ', array_fill(0, count($fieldStrList), $this->placeholder)) :
-            implode(', ', $fieldStrList);
-        $sql = "SELECT {$strSelect} FROM ".($usePlaceholder ? $this->placeholder : $tableName);
+        $strSelect = implode(', ', $fieldStrList);
+        $sql = "SELECT {$strSelect} FROM {$tableName}";
 
-        $keys = array_keys($fieldStrList);
-        $keys[] = 'tableName';
-        $fieldStrList[] = $tableName;
-
-        return new SqlQuery($sql, $fieldStrList, $keys);
+        return new SqlQuery($sql);
     }
 
     /**
@@ -115,7 +109,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $alias = $compareRule->getAlias();
         $operation = $compareRule->getOperation();
         $compareValue = $compareRule->getCompareValue();
-        $propertyName = !empty($alias) ? "{$alias}.{$operation}" : $compareRule->getKey();
+        $propertyName = !empty($alias) ? "{$alias}.{$compareRule->getKey()}" : $compareRule->getKey();
         switch ($operation) {
             case CompareRuleInterface::EQUAL:
 
@@ -317,14 +311,14 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
 
         $result = '';
         if ($limit > 0) {
-            $result .= "LIMIT ".$usePlaceholder ? $this->placeholder : $limit;
+            $result .= "LIMIT {$limit}";
         }
 
         if ($offset > 0) {
-            $result .= " OFFSET ".$usePlaceholder ? $this->placeholder : $offset;
+            $result .= " OFFSET {$offset}";
         }
 
-        return new SqlQuery($result, [$limit, $offset], ['limit', 'offset']);
+        return new SqlQuery($result);
     }
 
     /**
@@ -342,12 +336,10 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             return new SqlQuery('');
         }
 
-        $prepareValue = $usePlaceholder ?
-            implode(', ', array_fill(0, count($groupList), $this->placeholder)) :
-            implode(', ', $groupList);
+        $prepareValue = implode(', ', $groupList);
         $sql = "GROUP BY {$prepareValue}";
 
-        return new SqlQuery($sql, $groupList, array_fill(0, count($groupList), 'groupBy'));
+        return new SqlQuery($sql);
     }
 
     /**
@@ -405,22 +397,14 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         }
 
         $strList = [];
-        $values = [];
-        $keys = [];
         foreach($orderRule->getOrderData() as $key => $data) {
             $isAscending = (bool)$data['isAscending'];
             $alias = $data['alias'] ? "{$data['alias']}." : "";
-            $strList[] = $usePlaceholder ?
-                "? ?" :
-                "{$alias}{$key} " . ($isAscending ? 'ASC' : 'DESC');
-            $values[] = "{$alias}{$key}";
-            $values[] = $isAscending ? 'ASC' : 'DESC';
-            $keys[] = 'orderKey';
-            $keys[] = 'orderDirection';
+            $strList[] = "{$alias}{$key} " . ($isAscending ? 'ASC' : 'DESC');
         }
 
         $sql = "ORDER BY " . implode(', ', $strList);
 
-        return new SqlQuery($sql, $values, $keys);
+        return new SqlQuery($sql);
     }
 }

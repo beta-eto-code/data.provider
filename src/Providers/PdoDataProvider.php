@@ -84,7 +84,7 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
         $sth = $this->connection->prepare((string)$sqlQuery);
         $sth->execute($sqlQuery->getValues());
 
-        return $sth->fetchAll();
+        return $sth->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
