@@ -32,16 +32,16 @@ interface DataProviderInterface
 
     /**
      * @param array $data
-     * @param mixed $pk
+     * @param QueryCriteriaInterface|null $query
      * @return OperationResultInterface
      */
-    public function save(array $data, $pk = null): OperationResultInterface;
+    public function save(array $data, QueryCriteriaInterface $query = null): OperationResultInterface;
 
     /**
-     * @param mixed $pk
+     * @param QueryCriteriaInterface $query
      * @return OperationResultInterface
      */
-    public function remove($pk): OperationResultInterface;
+    public function remove(QueryCriteriaInterface $query): OperationResultInterface;
 
     /**
      * @return bool

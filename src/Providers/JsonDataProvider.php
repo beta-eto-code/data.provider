@@ -10,16 +10,12 @@ use Data\Provider\OperationResult;
 use DateTime;
 use Throwable;
 
-class JsonDataProvider implements DataProviderInterface
+class JsonDataProvider extends BaseFileDataProvider
 {
     /**
      * @var string
      */
     private $filePath;
-    /**
-     * @var string
-     */
-    private $pkName;
     /**
      * @var Closure|null
      */
@@ -31,15 +27,15 @@ class JsonDataProvider implements DataProviderInterface
         Closure $dataSaveHandler = null
     )
     {
+        parent::__construct($pkName);
         $this->filePath = $filePath;
-        $this->pkName = $pkName;
         $this->dataSaveHandler = $dataSaveHandler;
     }
 
     /**
      * @return array
      */
-    private function getDataFromFile(): array
+    protected function readDataFromFile(): array
     {
         if (!file_exists($this->filePath)) {
             return [];
@@ -58,90 +54,32 @@ class JsonDataProvider implements DataProviderInterface
     }
 
     /**
-     * @param QueryCriteriaInterface $query
-     * @return array
-     * @throws Exception
+     * @param array $dataList
+     * @return bool
      */
-    public function getData(QueryCriteriaInterface $query): array
+    protected function saveDataList(array $dataList): bool
     {
-        $data = $this->getDataInternal($query);
-        foreach ($query->getJoinList() as $joinRule) {
-            $joinRule->loadTo($data);
-            $joinRule->filterData($data);
+        foreach ($dataList as &$item) {
+            $item = $this->normalizeArray($item);
         }
+        unset($item);
 
-        return $data;
+        return file_put_contents(
+            $this->filePath,
+            json_encode($dataList,  JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)) !== false;
     }
 
     /**
-     * @param QueryCriteriaInterface $query
-     * @return array
+     * @param array $data
+     * @return bool
      */
-    protected function getDataInternal(QueryCriteriaInterface $query): array
+    protected function appendData(array $data): bool
     {
-        $resultList = [];
-        $dataList = $this->getDataFromFile();
-        if (empty($dataList)) {
-            return [];
-        }
+        $this->setPkForData($data);
+        $dataList = $this->readDataFromFile();
+        $dataList[] = $data;
 
-        $dataList = $query->getOrderBy()->sortData($dataList);
-        $criteriaList = $query->getCriteriaList();
-        $limit = $query->getLimit();
-        $offset = $query->getOffset();
-        foreach ($dataList as $data) {
-            if ($offset > 0) {
-                $offset--;
-                continue;
-            }
-
-            $isSuccess = true;
-            foreach ($criteriaList as $compareRule) {
-                if (!$compareRule->assertWithData($data)) {
-                    $isSuccess = false;
-                    break;
-                }
-            }
-
-            if ($isSuccess) {
-                $resultList[] = $data;
-                if ($limit > 0 && count($resultList) >= $limit) {
-                    break;
-                }
-            }
-        }
-
-        return $resultList;
-    }
-
-    /**
-     * @param QueryCriteriaInterface $query
-     * @return int
-     */
-    public function getDataCount(QueryCriteriaInterface $query): int
-    {
-        $count = 0;
-        $dataList = $this->getDataFromFile();
-        if (empty($dataList)) {
-            return 0;
-        }
-
-        $criteriaList = $query->getCriteriaList();
-        foreach ($dataList as $data) {
-            $isSuccess = true;
-            foreach ($criteriaList as $compareRule) {
-                if (!$compareRule->assertWithData($data)) {
-                    $isSuccess = false;
-                    break;
-                }
-            }
-
-            if ($isSuccess) {
-                $count++;
-            }
-        }
-
-        return $count;
+        return $this->saveDataList($dataList);
     }
 
     public function normalizePk($pk)
@@ -174,50 +112,6 @@ class JsonDataProvider implements DataProviderInterface
         }
 
         return $result;
-    }
-
-    public function save(array $data, $pk = null): OperationResultInterface
-    {
-        if (isset($data[$this->pkName])) {
-            unset($data[$this->pkName]);
-        }
-
-        $dataList = $this->getDataFromFile();
-        if (!empty($pk)) {
-            $normalizedPk = $this->normalizePk($pk);
-        } else {
-            $normalizedPk = count($dataList)+1;
-        }
-
-        $data[$this->pkName] = $normalizedPk;
-        $dataFromStorage = $dataList[$normalizedPk] ?? [];
-        $dataList[$normalizedPk] = $this->normalizeArray(array_merge($dataFromStorage, $data));
-        $isSuccess = file_put_contents($this->filePath, json_encode($dataList,  JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)) !== false;
-        if (!$isSuccess) {
-            return new OperationResult('Ошибка сохранения данных', $data);
-        }
-
-        $result = $dataList[$normalizedPk];
-        $result['pk'] = $normalizedPk;
-
-        if (!empty($this->pkName)) {
-            $result[$this->pkName] = $normalizedPk;
-        }
-
-        return new OperationResult(null, $result);
-    }
-
-    public function remove($pk): OperationResultInterface
-    {
-        $dataList = $this->getDataFromFile();
-        $normalizedPk = $this->normalizePk($pk);
-        if (!isset($dataList[$normalizedPk])) {
-            return new OperationResult('Запись не найдена', $pk);
-        }
-
-        unset($dataList[$normalizedPk]);
-
-        return new OperationResult(null, $pk);
     }
 
     /**

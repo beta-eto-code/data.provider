@@ -23,7 +23,9 @@ abstract class BaseDataProvider implements DataProviderInterface
         $data = $this->getDataInternal($query);
         foreach ($query->getJoinList() as $joinRule) {
             $joinDataProvider = $joinRule->getDataProvider();
-            if ($joinDataProvider instanceof SqlRelationProviderInterface) {
+            if ($this instanceof SqlRelationProviderInterface &&
+                $joinDataProvider instanceof SqlRelationProviderInterface
+            ) {
                 continue;
             }
 

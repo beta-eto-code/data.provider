@@ -90,6 +90,11 @@ interface QueryCriteriaInterface
     public function addCriteria(string $name, string $operation, $value): CompareRuleInterface;
 
     /**
+     * @return DataCheckerInterface
+     */
+    public function createDataChecker(): DataCheckerInterface;
+
+    /**
      * @return CompareRuleInterface[]
      */
     public function getCriteriaList(): array;

@@ -29,13 +29,13 @@ class DefaultDataMigrator implements DataMigratorInterface
      * @param string|null $sourcePkKey
      * @return MigrateResultInterface
      */
-    public function run(QueryCriteriaInterface $query, string $sourcePkKey = null): MigrateResultInterface
+    public function run(QueryCriteriaInterface $query, string $sourcePkName = null): MigrateResultInterface
     {
         $resultList = [];
         $dataForImport = $this->sourceProvider->getData($query);
         foreach ($dataForImport as $data) {
-            if (!empty($sourcePkKey)) {
-                unset($data[$sourcePkKey]);
+            if (!empty($sourcePkName)) {
+                unset($data[$sourcePkName]);
             }
 
             $operationResult = $this->targetProvider->save($data);

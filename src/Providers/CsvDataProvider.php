@@ -9,16 +9,12 @@ use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\OperationResult;
 use Data\Provider\QueryCriteria;
 
-class CsvDataProvider implements DataProviderInterface
+class CsvDataProvider extends BaseFileDataProvider
 {
     /**
      * @var string
      */
     private $filePath;
-    /**
-     * @var string|Closure
-     */
-    private $pkKey;
     /**
      * @var string
      */
@@ -38,46 +34,30 @@ class CsvDataProvider implements DataProviderInterface
 
     public function __construct(
         string $filePath,
-        $pkKey,
+        string $pkName = null,
         string $separator = ',',
         string $enclosure = '"',
         string $escape = "\\"
     ) {
+        parent::__construct($pkName);
+
         $this->filePath = $filePath;
-        $this->pkKey = $pkKey;
         $this->separator = $separator;
         $this->enclusure = $enclosure;
         $this->escape = $escape;
     }
 
     /**
-     * @param QueryCriteriaInterface $query
-     * @return array
-     * @throws Exception
-     */
-    public function getData(QueryCriteriaInterface $query): array
-    {
-        $data = $this->getDataInternal($query);
-        foreach ($query->getJoinList() as $joinRule) {
-            $joinRule->loadTo($data);
-            $joinRule->filterData($data);
-        }
-
-        return $data;
-    }
-
-    /**
-     * @param string[] $defaultKeys
      * @return string[]
      */
-    private function getHeaders(array $defaultKeys = []): array
+    private function getHeaders(): array
     {
         if (!empty($this->headers)) {
             return $this->headers;
         }
 
         if (!file_exists($this->filePath)) {
-            return $this->headers = $defaultKeys;
+            return [];
         }
 
         $file = fopen($this->filePath, 'r');
@@ -85,10 +65,14 @@ class CsvDataProvider implements DataProviderInterface
         fclose($file);
 
         if (empty($data)) {
-            return $this->headers = $defaultKeys;
+            return [];
         }
 
-        $this->headers = $data;
+        if (!empty($this->pkName) && !in_array($this->pkName, $data)) {
+            $data[] = $this->pkName;
+        }
+
+        return $this->headers = $data;
     }
 
     /**
@@ -123,55 +107,90 @@ class CsvDataProvider implements DataProviderInterface
     }
 
     /**
-     * @param QueryCriteriaInterface $query
      * @return array
      */
-    protected function getDataInternal(QueryCriteriaInterface $query): array
+    protected function readDataFromFile(): array
     {
         $headers = $this->getHeaders();
         if (empty($headers)) {
             return [];
         }
 
-        $index = 0;
-        $result = [];
         $file = fopen($this->filePath, 'r');
 
-        $limit = $query->getLimit();
-        $offset = $query->getOffset();
-        $criteriaList = $query->getCriteriaList();
-        while ($row = $this->getCsvRow($file) !== false) {
+        $index = 0;
+        $result = [];
+        while ($row = $this->getCsvRow($file)) {
             if ($index++ === 0) {
-                continue;
-            }
-
-            if ($offset > 0) {
-                $offset--;
                 continue;
             }
 
             $item = $this->readItem($headers, $row);
             if (!empty($item)) {
-                $isSuccess = true;
-                foreach ($criteriaList as $compareRule) {
-                    if (!$compareRule->assertWithData($item)) {
-                        $isSuccess = false;
-                        break;
-                    }
-                }
-
-                if ($isSuccess) {
-                    $result[] = $item;
-                    if ($limit > 0 && count($result) >= $limit) {
-                        break;
-                    }
-                }
+                $result[] = $item;
             }
         }
 
         fclose($file);
 
         return $result;
+    }
+
+    /**
+     * @param array $dataList
+     * @return bool
+     */
+    protected function saveDataList(array $dataList): bool
+    {
+        $headers = $this->getHeaders();
+        $file = fopen($this->filePath, 'w');
+        $this->saveItem($file, $headers);
+        foreach ($dataList as $item) {
+            $this->saveItem($file, $this->prepareItemForSave($headers, $item));
+        }
+
+        fclose($file);
+
+        return true;
+    }
+
+    /**
+     * @param array $data
+     * @return bool
+     */
+    protected function appendData(array $data): bool
+    {
+        $this->setPkForData($data);
+        $headers = $this->getHeaders();
+        $file = fopen($this->filePath, 'a');
+        if (empty($headers)) {
+            $headers = array_keys($data);
+            if ($this->isValidPk() && !in_array($this->pkName, $headers)) {
+                $headers[] = $this->pkName;
+            }
+
+            $this->saveItem($file, $headers);
+        }
+
+
+        $dataForSave = $this->prepareItemForSave($headers, $data);
+        $isSuccess = (bool)$this->saveItem($file, $dataForSave);
+        fclose($file);
+
+        return $isSuccess;
+    }
+
+    /**
+     * @param QueryCriteriaInterface $query
+     * @return array
+     */
+    protected function getDataInternal(QueryCriteriaInterface $query): array
+    {
+        $dataList = $query->getOrderBy()->sortData(
+            $this->readDataFromFile()
+        );
+
+        return $query->createDataChecker()->filterDataList($dataList);
     }
 
     /**
@@ -183,110 +202,31 @@ class CsvDataProvider implements DataProviderInterface
     }
 
     /**
-     * @return Closure|null
-     */
-    public function getDataHandler(): ?Closure
-    {
-        return null;
-    }
-
-    /**
-     * @param QueryCriteriaInterface $query
-     * @return int
-     */
-    public function getDataCount(QueryCriteriaInterface $query): int
-    {
-        return count($this->getData($query));
-    }
-
-    /**
+     * @param array $headers
      * @param array $data
-     * @param mixed|null $pk
-     * @return OperationResultInterface
+     * @return array
      */
-    public function save(array $data, $pk = null): OperationResultInterface
+    private function prepareItemForSave(array $headers, array $data): array
     {
-        $headers = $this->getHeaders(array_keys($data));
-        $dataForSave = [];
-        if (empty($pk)) {
-            $file = fopen($this->filePath, 'w+');
-            foreach ($headers as $key) {
-                $dataForSave[] = $data[$key] ?? null;
-            }
-
-            $isSuccess = (bool)fputcsv($file, $dataForSave, $this->separator, $this->enclusure, $this->escape);
-            fclose($file);
-
-            return $isSuccess ?
-                new OperationResult() :
-                new OperationResult('Ошибка сохранения данных', ['pk' => $pk, 'data' => $data]);
-        }
-
-        $isFind = false;
-        $listData = $this->getData(new QueryCriteria());
-        foreach ($listData as &$item) {
-            if ((is_callable($this->pkKey) && ($this->pkKey)($item, $pk)) ||
-                (!is_callable($this->pkKey) && $item[$this->pkKey] === $pk)) {
-                foreach ($headers as $i => $key) {
-                    if (!is_null($data[$key])) {
-                        $isFind = true;
-                        $item[$i] = $data[$key];
-                    }
-                }
-                break;
+        $item = [];
+        foreach ($headers as $i => $key) {
+            if (!is_null($data[$key])) {
+                $item[$i] = $data[$key];
             }
         }
-        unset($item);
 
-        if (!$isFind) {
-            return new OperationResult('Элемент не найден', ['pk' => $pk, 'data' => $data]);
-        }
-
-        $file = fopen($this->filePath, 'w');
-        fputcsv($file, $headers, $this->separator, $this->enclusure, $this->escape);
-        foreach ($listData as $item) {
-            fputcsv($file, $item, $this->separator, $this->enclusure, $this->escape);
-            fclose($file);
-        }
-
-        return new OperationResult();
+        return $item;
     }
 
     /**
-     * @param mixed $pk
-     * @return OperationResultInterface
+     * @param $file
+     * @param array $headers
+     * @param array $data
+     * @return int|bool
      */
-    public function remove($pk): OperationResultInterface
+    private function saveItem($file, array $data)
     {
-        $headers = $this->getHeaders();
-        if (empty($headers)) {
-            return new OperationResult('Элемент не найден', ['pk' => $pk]);
-        }
-
-        $result = [];
-        $isFind = false;
-        $listData = $this->getData(new QueryCriteria());
-        foreach ($listData as $item) {
-            if ((is_callable($this->pkKey) && ($this->pkKey)($item, $pk)) ||
-                (!is_callable($this->pkKey) && $item[$this->pkKey] === $pk)) {
-                continue;
-            }
-
-            $result[] = $item;
-        }
-
-        if (!$isFind) {
-            return new OperationResult('Элемент не найден', ['pk' => $pk]);
-        }
-
-        $file = fopen($this->filePath, 'w');
-        fputcsv($file, $headers, $this->separator, $this->enclusure, $this->escape);
-        foreach ($result as $item) {
-            fputcsv($file, $item, $this->separator, $this->enclusure, $this->escape);
-            fclose($file);
-        }
-
-        return new OperationResult();
+        return fputcsv($file, $data, $this->separator, $this->enclusure, $this->escape);
     }
 
     /**

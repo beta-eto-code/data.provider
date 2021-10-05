@@ -3,6 +3,7 @@
 namespace Data\Provider;
 
 use Data\Provider\Interfaces\CompareRuleInterface;
+use Data\Provider\Interfaces\DataCheckerInterface;
 use Data\Provider\Interfaces\DataProviderInterface;
 use Data\Provider\Interfaces\JoinRuleInterface;
 use Data\Provider\Interfaces\OrderRuleInterface;
@@ -173,6 +174,14 @@ class QueryCriteria implements QueryCriteriaInterface
     public function setGroup(array $group)
     {
         $this->group = $group;
+    }
+
+    /**
+     * @return DataCheckerInterface
+     */
+    public function createDataChecker(): DataCheckerInterface
+    {
+        return new DefaultDataChecker($this);
     }
 
     public function getGroup(): array

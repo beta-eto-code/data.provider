@@ -104,12 +104,12 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
 
     /**
      * @param array $data
-     * @param null $pk
+     * @param QueryCriteriaInterface|null $query
      * @return OperationResultInterface
      */
-    public function save(array $data, $pk = null): OperationResultInterface
+    public function save(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
     {
-        if (empty($pk)) {
+        if (empty($query)) {
             $sqlQuery = $this->sqlBuilder->buildInsertQuery($data, $this->tableName, true);
             $sth = $this->connection->prepare((string)$sqlQuery);
             $isSuccess = $sth->execute($sqlQuery->getValues());
@@ -118,9 +118,6 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
                 new OperationResult() :
                 new OperationResult('Ошибка добавления записи:'.implode(', ', $sth->errorInfo()));
         }
-
-        $query = new QueryCriteria();
-        $this->queryByPk($query, $pk);
 
         $sqlQuery = $this->sqlBuilder->buildUpdateQuery($query, $data, $this->tableName, true);
         $sth = $this->connection->prepare((string)$sqlQuery);
@@ -145,14 +142,11 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     }
 
     /**
-     * @param mixed $pk
+     * @param QueryCriteriaInterface $query
      * @return OperationResultInterface
      */
-    public function remove($pk): OperationResultInterface
+    public function remove(QueryCriteriaInterface $query): OperationResultInterface
     {
-        $query = new QueryCriteria();
-        $this->queryByPk($query, $pk);
-
         $sqlQuery = $this->sqlBuilder->buildDeleteQuery($query, $this->tableName, true);
         $sth = $this->connection->prepare((string)$sqlQuery);
         $isSuccess = $sth->execute($sqlQuery->getValues());
