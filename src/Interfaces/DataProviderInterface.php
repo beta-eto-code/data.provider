@@ -9,14 +9,21 @@ use Closure;
 interface DataProviderInterface
 {
     /**
+     * @param Closure $mapper - function(array $data): array
+     * @return void
+     */
+    public function setMapperForRead(Closure $mapper);
+
+    /**
+     * @param Closure $mapper - function(array $data): array
+     * @return void
+     */
+    public function setMapperForSave(Closure $mapper);
+
+    /**
      * @return string
      */
     public function getSourceName(): string;
-
-    /**
-     * @return Closure|null - function(ModelInterface $model): array
-     */
-    public function getDataHandler(): ?Closure;
 
     /**
      * @param QueryCriteriaInterface $query
@@ -57,4 +64,21 @@ interface DataProviderInterface
      * @return bool
      */
     public function rollbackTransaction(): bool;
+
+    /**
+     * @return string|null
+     */
+    public function getPkName(): ?string;
+
+    /**
+     * @param array $data
+     * @return void
+     */
+    public function clearPk(array &$data);
+
+    /**
+     * @param array $data
+     * @return mixed
+     */
+    public function getPkValue(array $data);
 }

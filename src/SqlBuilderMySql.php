@@ -110,10 +110,12 @@ class SqlBuilderMySql extends SqlBuilderBase
         $limitOffsetBlock = $this->buildLimitOffsetBlock($queryCriteria, $usePlaceholder);
 
         $values = array_values($data);
+        $values = array_merge($values, $whereBlock->getValues());
         $values = array_merge($values, $orderBlock->getValues());
         $values = array_merge($values, $limitOffsetBlock->getValues());
 
         $keys = array_keys($data);
+        $keys = array_merge($keys, $whereBlock->getKeys());
         $keys = array_merge($keys, $orderBlock->getKeys());
         $keys = array_merge($keys, $limitOffsetBlock->getKeys());
 

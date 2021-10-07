@@ -30,24 +30,20 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
      * @var Closure|null
      */
     private $dataHandler;
-    /**
-     * @var array|string|Closure
-     */
-    private $pkKey;
 
     public function __construct(
         PDO $connection,
         string $tableName,
         SqlBuilderInterface $sqlBuilder,
-        $pkKey,
+        string $pkName = null,
         ?Closure $dataHandler = null
     )
     {
+        parent::__construct($pkName);
         $this->connection = $connection;
         $this->tableName = $tableName;
         $this->sqlBuilder = $sqlBuilder;
         $this->dataHandler = $dataHandler;
-        $this->pkKey = $pkKey;
     }
 
     /**
@@ -107,7 +103,7 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
      * @param QueryCriteriaInterface|null $query
      * @return OperationResultInterface
      */
-    public function save(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
+    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
     {
         if (empty($query)) {
             $sqlQuery = $this->sqlBuilder->buildInsertQuery($data, $this->tableName, true);
@@ -115,8 +111,16 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
             $isSuccess = $sth->execute($sqlQuery->getValues());
 
             return  $isSuccess ?
-                new OperationResult() :
-                new OperationResult('Ошибка добавления записи:'.implode(', ', $sth->errorInfo()));
+                new OperationResult(null, [
+                    'data' => $data
+                ]) :
+                new OperationResult(
+                    'Ошибка добавления записи:'.implode(', ', $sth->errorInfo()),
+                    [
+                        'data' => $data,
+                        'query' => $query,
+                    ]
+                );
         }
 
         $sqlQuery = $this->sqlBuilder->buildUpdateQuery($query, $data, $this->tableName, true);
@@ -124,21 +128,20 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
         $isSuccess = $sth->execute($sqlQuery->getValues());
 
         return  $isSuccess ?
-            new OperationResult() :
-            new OperationResult('Ошибка обновления записи:'.implode(', ', $sth->errorInfo()));
-    }
-
-    /**
-     * @param QueryCriteriaInterface $query
-     * @param $pk
-     */
-    private function queryByPk(QueryCriteriaInterface $query, $pk)
-    {
-        if (is_callable($this->pkKey)) {
-            ($this->pkKey)($query, $pk);
-        } else {
-            $query->addCriteria($this->pkKey, CompareRuleInterface::EQUAL, $pk);
-        }
+            new OperationResult(
+                null,
+                [
+                    'data' => $data,
+                    'query' => $query,
+                ]
+            ) :
+            new OperationResult(
+                'Ошибка обновления записи:'.implode(', ', $sth->errorInfo()),
+                [
+                    'data' => $data,
+                    'query' => $query,
+                ]
+            );
     }
 
     /**
@@ -152,8 +155,11 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
         $isSuccess = $sth->execute($sqlQuery->getValues());
 
         return  $isSuccess ?
-            new OperationResult() :
-            new OperationResult('Ошибка обновления записи:'.implode(', ', $sth->errorInfo()));
+            new OperationResult(null, ['query' => $query]) :
+            new OperationResult(
+                'Ошибка обновления записи:'.implode(', ', $sth->errorInfo()),
+                ['query' => $query]
+            );
     }
 
     /**

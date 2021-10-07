@@ -11,18 +11,9 @@ use Data\Provider\QueryCriteria;
 abstract class BaseFileDataProvider extends BaseDataProvider
 {
     /**
-     * @var string|null
-     */
-    protected $pkName;
-    /**
      * @var int
      */
     protected $lastPk;
-
-    public function __construct(string $pkName = null)
-    {
-        $this->pkName = $pkName;
-    }
 
     /**
      * @return array
@@ -92,7 +83,7 @@ abstract class BaseFileDataProvider extends BaseDataProvider
      * @param QueryCriteriaInterface|null $query
      * @return OperationResultInterface
      */
-    public function save(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
+    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
     {
         $errorMessage = 'Ошибка сохранения данных';
         if (empty($query)) {
