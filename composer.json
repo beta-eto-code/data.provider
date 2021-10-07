@@ -19,5 +19,8 @@
     "psr-4": {
       "Data\\Provider\\": "src/"
     }
+  },
+  "require-dev": {
+    "fzaninotto/faker": "^1.9"
   }
 }

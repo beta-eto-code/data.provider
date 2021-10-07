@@ -73,7 +73,7 @@ class ClosureDataProvider extends BaseDataProvider
      * @param mixed|null $pk
      * @return OperationResultInterface
      */
-    public function save(array $data, $pk = null): OperationResultInterface
+    protected function saveInternal(array $data, $pk = null): OperationResultInterface
     {
         return new OperationResult('Not implemented', ['data' => $data, 'pk' => $pk]);
     }
