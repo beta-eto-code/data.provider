@@ -98,6 +98,21 @@ class DefaultDataMigrator implements DataMigratorInterface
     }
 
     /**
+     * @param OperationResult $result
+     * @param array $data
+     * @return OperationResult
+     */
+    private function prepareResult(OperationResult $result, array $data): OperationResult
+    {
+        $errorMessage = $result->getErrorMessage();
+
+        return new OperationResult(
+            !empty($errorMessage) ? $errorMessage : null,
+            $data
+        );
+    }
+
+    /**
      * @param QueryCriteria $query
      * @param Closure|string $compareRule - key for compare value or closure function(array $dataImport): QueryCriteriaInterface
      * @param bool $insertOnFailUpdate
@@ -129,7 +144,7 @@ class DefaultDataMigrator implements DataMigratorInterface
                     if ($insertOnFailUpdate && $updateResult->hasError()) {
                         $dataForInsert[] = $item;
                     } else {
-                        $updateResultList[] = $updateResult;
+                        $updateResultList[] = $this->prepareResult($updateResult, $item);
                     }
                 }
             }
@@ -149,7 +164,7 @@ class DefaultDataMigrator implements DataMigratorInterface
                     if ($insertOnFailUpdate && $updateResult->hasError()) {
                         $dataForInsert[] = $item;
                     } else {
-                        $updateResultList[] = $updateResult;
+                        $updateResultList[] = $this->prepareResult($updateResult, $item);;
                     }
                 }
             }

@@ -2,9 +2,9 @@
 
 namespace Data\Provider;
 
-use Data\Provider\Interfaces\OperationResultInterface;
+use Data\Provider\Interfaces\PkOperationResultInterface;
 
-class OperationResult implements OperationResultInterface
+class OperationResult implements PkOperationResultInterface
 {
     /**
      * @var string|null
@@ -14,11 +14,24 @@ class OperationResult implements OperationResultInterface
      * @var mixed|null
      */
     private $data;
+    /**
+     * @var mixed|null
+     */
+    private $pk;
 
-    public function __construct(string $errorMessage = null, $data = null)
+    public function __construct(string $errorMessage = null, $data = null, $pk = null)
     {
         $this->errorMessage = $errorMessage;
         $this->data = $data;
+        $this->pk = $pk;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getPk()
+    {
+        return $this->pk;
     }
 
     /**

@@ -96,7 +96,6 @@ class XmlDataProvider extends BaseFileDataProvider
      */
     protected function appendData(array $data): bool
     {
-        $this->setPkForData($data);
         $rootNode = $this->getRootNode();
         $listNode = $this->getListNode($rootNode);
         $item = $listNode->addChild($this->itemNodeName);

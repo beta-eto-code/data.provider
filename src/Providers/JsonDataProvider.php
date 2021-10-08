@@ -75,7 +75,6 @@ class JsonDataProvider extends BaseFileDataProvider
      */
     protected function appendData(array $data): bool
     {
-        $this->setPkForData($data);
         $dataList = $this->readDataFromFile();
         $dataList[] = $data;
 

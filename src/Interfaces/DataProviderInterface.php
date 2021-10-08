@@ -40,9 +40,9 @@ interface DataProviderInterface
     /**
      * @param array $data
      * @param QueryCriteriaInterface|null $query
-     * @return OperationResultInterface
+     * @return PkOperationResultInterface
      */
-    public function save(array $data, QueryCriteriaInterface $query = null): OperationResultInterface;
+    public function save(array $data, QueryCriteriaInterface $query = null): PkOperationResultInterface;
 
     /**
      * @param QueryCriteriaInterface $query

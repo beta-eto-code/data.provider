@@ -5,6 +5,7 @@ namespace Data\Provider\Providers;
 use Closure;
 use Data\Provider\Interfaces\DataProviderInterface;
 use Data\Provider\Interfaces\OperationResultInterface;
+use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\Interfaces\SqlRelationProviderInterface;
 
@@ -38,12 +39,12 @@ abstract class BaseDataProvider implements DataProviderInterface
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return array
+     * @return PkOperationResultInterface
      */
     abstract protected function saveInternal(
         array $data,
         QueryCriteriaInterface $query = null
-    ): OperationResultInterface;
+    ): PkOperationResultInterface;
 
     /**
      * @param Closure $mapper - function(array $data): array
@@ -92,9 +93,9 @@ abstract class BaseDataProvider implements DataProviderInterface
     /**
      * @param array $data
      * @param QueryCriteriaInterface|null $query
-     * @return OperationResultInterface
+     * @return PkOperationResultInterface
      */
-    final public function save(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
+    final public function save(array $data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
         if (is_callable($this->mapperForSave)) {
             $data = ($this->mapperForSave)($data);

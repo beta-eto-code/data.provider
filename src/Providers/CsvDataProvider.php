@@ -160,7 +160,6 @@ class CsvDataProvider extends BaseFileDataProvider
      */
     protected function appendData(array $data): bool
     {
-        $this->setPkForData($data);
         $headers = $this->getHeaders();
         $file = fopen($this->filePath, 'a');
         if (empty($headers)) {

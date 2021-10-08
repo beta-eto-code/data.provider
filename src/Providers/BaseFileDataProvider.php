@@ -4,6 +4,7 @@ namespace Data\Provider\Providers;
 
 use Closure;
 use Data\Provider\Interfaces\OperationResultInterface;
+use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\OperationResult;
 use Data\Provider\QueryCriteria;
@@ -81,14 +82,17 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     /**
      * @param array $data
      * @param QueryCriteriaInterface|null $query
-     * @return OperationResultInterface
+     * @return PkOperationResultInterface
      */
-    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
+    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
         $errorMessage = 'Ошибка сохранения данных';
         if (empty($query)) {
+            $this->setPkForData($data);
+            $pk = $this->getPkValue($data);
+
             return $this->appendData($data) ?
-                new OperationResult(null, ['query' => $query, 'data' => $data]) :
+                new OperationResult(null, ['query' => $query, 'data' => $data], $pk) :
                 new OperationResult($errorMessage, ['query' => $query, 'data' => $data]);
         }
 

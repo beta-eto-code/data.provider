@@ -5,6 +5,7 @@ namespace Data\Provider\Providers;
 use Closure;
 use Data\Provider\Interfaces\CompareRuleInterface;
 use Data\Provider\Interfaces\OperationResultInterface;
+use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\Interfaces\SqlBuilderInterface;
 use Data\Provider\Interfaces\SqlRelationProviderInterface;
@@ -101,9 +102,9 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     /**
      * @param array $data
      * @param QueryCriteriaInterface|null $query
-     * @return OperationResultInterface
+     * @return PkOperationResultInterface
      */
-    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): OperationResultInterface
+    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
         if (empty($query)) {
             $sqlQuery = $this->sqlBuilder->buildInsertQuery($data, $this->tableName, true);
@@ -113,7 +114,7 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
             return  $isSuccess ?
                 new OperationResult(null, [
                     'data' => $data
-                ]) :
+                ], $this->connection->lastInsertId()) :
                 new OperationResult(
                     'Ошибка добавления записи:'.implode(', ', $sth->errorInfo()),
                     [
