@@ -2,6 +2,7 @@
 
 namespace Data\Provider\Providers;
 
+use Bitrix\Crm\ConfigChecker\Iterator;
 use Closure;
 use Data\Provider\Interfaces\OperationResultInterface;
 use Data\Provider\Interfaces\PkOperationResultInterface;
@@ -28,22 +29,38 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     abstract protected function saveDataList(array $dataList): bool;
 
     /**
-     * @param array $data
+     * @param array|\ArrayObject $data
      * @return bool
      */
-    abstract protected function appendData(array $data): bool;
+    abstract protected function appendData($data): bool;
 
     /**
-     * @param QueryCriteriaInterface $query
-     * @return array
+     * @param QueryCriteriaInterface|null $query
+     * @return \Iterator
      */
-    protected function getDataInternal(QueryCriteriaInterface $query): array
+    protected function getInternalIterator(QueryCriteriaInterface $query = null): \Iterator
     {
         $dataList = $query->getOrderBy()->sortData(
             $this->readDataFromFile()
         );
 
-        return $query->createDataChecker()->filterDataList($dataList);
+        $dataChecker = !empty($query) ? $query->createDataChecker() : null;
+        foreach ($dataList as $dataItem) {
+            if (empty($query)) {
+                yield $dataItem;
+                continue;
+            }
+
+            if ($dataChecker->failByLimit()) {
+                break;
+            }
+
+            if ($dataChecker->assertDataByCriteria($dataItem)) {
+                yield $dataItem;
+            }
+        }
+
+        return new \EmptyIterator();
     }
 
     /**
@@ -80,11 +97,11 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param array $data
+     * @param array|\ArrayObject $data
      * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
-    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): PkOperationResultInterface
+    protected function saveInternal(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
         $errorMessage = 'Ошибка сохранения данных';
         if (empty($query)) {
@@ -119,10 +136,10 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param QueryCriteriaInterface $query
+     * @param QueryCriteriaInterface|null $query
      * @return int
      */
-    public function getDataCount(QueryCriteriaInterface $query): int
+    public function getDataCount(QueryCriteriaInterface $query = null): int
     {
         return count($this->getData($query));
     }

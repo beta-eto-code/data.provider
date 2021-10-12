@@ -2,6 +2,7 @@
 
 namespace Data\Provider\Providers;
 
+use Bitrix\Crm\ConfigChecker\Iterator;
 use Closure;
 use Data\Provider\Interfaces\OperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
@@ -29,18 +30,20 @@ class ClosureDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param QueryCriteriaInterface $query
-     * @return array
+     * @param QueryCriteriaInterface|null $query
+     * @return \Iterator
      */
-    protected function getDataInternal(QueryCriteriaInterface $query): array
+    protected function getInternalIterator(QueryCriteriaInterface $query = null): \Iterator
     {
-        $result = [];
-        $limit = $query->getLimit() > 0 ? $query->getLimit() : $this->defaultLimit;
+        $limit = empty($query) ?
+            $this->defaultLimit :
+            ($query->getLimit() > 0 ? $query->getLimit() : $this->defaultLimit);
+
         while ($limit-- > 0) {
-            $result[] = ($this->itemHandler)($query);
+            yield ($this->itemHandler)($query);
         }
 
-        return $result;
+        return new \EmptyIterator();
     }
 
     /**
@@ -60,22 +63,26 @@ class ClosureDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param QueryCriteriaInterface $query
+     * @param QueryCriteriaInterface|null $query
      * @return int
      */
-    public function getDataCount(QueryCriteriaInterface $query): int
+    public function getDataCount(QueryCriteriaInterface $query = null): int
     {
+        if (empty($query)) {
+            return $this->defaultLimit;
+        }
+
         return $query->getLimit() > 0 ? $query->getLimit() : $this->defaultLimit;
     }
 
     /**
-     * @param array $data
-     * @param mixed|null $pk
+     * @param array|\ArrayObject $data
+     * @param QueryCriteriaInterface|null $query
      * @return OperationResultInterface
      */
-    protected function saveInternal(array $data, $pk = null): OperationResultInterface
+    protected function saveInternal(&$data, QueryCriteriaInterface $query = null): OperationResultInterface
     {
-        return new OperationResult('Not implemented', ['data' => $data, 'pk' => $pk]);
+        return new OperationResult('Not implemented', ['data' => $data, 'query' => $query]);
     }
 
     /**

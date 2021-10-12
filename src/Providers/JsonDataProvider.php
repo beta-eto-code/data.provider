@@ -98,7 +98,7 @@ class JsonDataProvider extends BaseFileDataProvider
      * @param array $data
      * @return array
      */
-    private function normalizeArray(array $data): array
+    private function normalizeArray($data): array
     {
         $result = [];
         foreach($data as $key => $value) {

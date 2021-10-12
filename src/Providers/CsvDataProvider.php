@@ -89,7 +89,7 @@ class CsvDataProvider extends BaseFileDataProvider
      * @param array $row
      * @return array
      */
-    private function readItem(array $headers, array $row): array
+    private function readItem($headers, array $row): array
     {
         $item = [];
         foreach ($row as $i => $value) {
@@ -158,7 +158,7 @@ class CsvDataProvider extends BaseFileDataProvider
      * @param array $data
      * @return bool
      */
-    protected function appendData(array $data): bool
+    protected function appendData($data): bool
     {
         $headers = $this->getHeaders();
         $file = fopen($this->filePath, 'a');
@@ -180,19 +180,6 @@ class CsvDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @param QueryCriteriaInterface $query
-     * @return array
-     */
-    protected function getDataInternal(QueryCriteriaInterface $query): array
-    {
-        $dataList = $query->getOrderBy()->sortData(
-            $this->readDataFromFile()
-        );
-
-        return $query->createDataChecker()->filterDataList($dataList);
-    }
-
-    /**
      * @return string
      */
     public function getSourceName(): string
@@ -205,7 +192,7 @@ class CsvDataProvider extends BaseFileDataProvider
      * @param array $data
      * @return array
      */
-    private function prepareItemForSave(array $headers, array $data): array
+    private function prepareItemForSave($headers, array $data): array
     {
         $item = [];
         foreach ($headers as $i => $key) {

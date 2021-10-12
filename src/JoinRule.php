@@ -2,6 +2,7 @@
 
 namespace Data\Provider;
 
+use Bitrix\Crm\ConfigChecker\Iterator;
 use Data\Provider\Interfaces\CompareRuleInterface;
 use Data\Provider\Interfaces\DataProviderInterface;
 use Data\Provider\Interfaces\JoinRuleInterface;
@@ -38,6 +39,10 @@ class JoinRule implements JoinRuleInterface
      * @var CompareRuleInterface|null
      */
     private $filterByJoinData;
+    /**
+     * @var array
+     */
+    private $allItems;
 
     public function __construct(
         DataProviderInterface $dataProvider,
@@ -103,11 +108,55 @@ class JoinRule implements JoinRuleInterface
     }
 
     /**
+     * @return array
+     */
+    private function getAll(): array
+    {
+        if (!empty($this->allItems)) {
+            return $this->allItems;
+        }
+
+        return $this->allItems = $this->dataProvider->getData(new QueryCriteria());
+    }
+
+    /**
+     * @param $item
+     * @param array|null $destItems
+     * @param array|null $select
+     * @return \Iterator
+     */
+    public function processJoinToItem($item, array $destItems = null, array $select = null): \Iterator
+    {
+        $count = 0;
+        $select = $select ?? $this->query->getSelect();
+
+        foreach ($destItems ?? $this->getAll() as $destItem) {
+            if ($destItem[$this->destKey] === $item[$this->foreignKey]) {
+                $count++;
+                $dataForMerge = [];
+                foreach ($select as $key) {
+                    $dataForMerge[$key] = $destItem[$key] ?? null;
+                }
+                yield array_merge($item, $dataForMerge);
+            }
+        }
+
+        if ($count === 0 && $this->type === JoinRuleInterface::LEFT_TYPE) {
+            yield $item;
+        }
+    }
+
+    /**
      * @param $data
      * @return void
      */
-    public function loadTo(&$data)
+    public function loadTo(&$data, array $select = null)
     {
+        $select = $select ?? $this->query->getSelect();
+        if (empty($select)) {
+            return;
+        }
+
         if (!($this->query instanceof QueryCriteriaInterface) || empty($this->query->getSelect())) {
             return;
         }
@@ -122,23 +171,10 @@ class JoinRule implements JoinRuleInterface
 
         $result = [];
         $destDataList = $this->dataProvider->getData($this->query);
-        $select = $this->query->getSelect();
 
         foreach ($data as $i => $item) {
-            $count = 0;
-            foreach ($destDataList as $destItem) {
-                if ($destItem[$this->destKey] === $item[$this->foreignKey]) {
-                    $count++;
-                    $dataForMerge = [];
-                    foreach ($select as $key) {
-                        $dataForMerge[$key] = $destItem[$key] ?? null;
-                    }
-                    $result[] = array_merge($item, $dataForMerge);
-                }
-            }
-
-            if ($count === 0 && $this->type === JoinRuleInterface::LEFT_TYPE) {
-                $result[] = $item;
+            foreach ($this->processJoinToItem($item, $destDataList, $select) as $resultItem) {
+                $result[] = $resultItem;
             }
         }
 
@@ -171,6 +207,15 @@ class JoinRule implements JoinRuleInterface
     }
 
     /**
+     * @param array $item
+     * @return bool
+     */
+    public function assertItem(array $item): bool
+    {
+        return $this->filterByJoinData->assertWithData($itemData);
+    }
+
+    /**
      * @param $data
      * @return void
      */
@@ -182,7 +227,7 @@ class JoinRule implements JoinRuleInterface
 
         $result = [];
         foreach($data as $itemData) {
-            if ($this->filterByJoinData->assertWithData($itemData)) {
+            if ($this->assertItem($itemData)) {
                 $result[] = $itemData;
             }
         }

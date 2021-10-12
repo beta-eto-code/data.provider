@@ -367,14 +367,24 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             $sourceName = $joinDataProvider->getTableName();
             $destKey = $joinRule->getDestKey();
             $foreignKey = $joinRule->getForeignKey();
-            $compareRule = $joinRule->getCompareRule();
 
-            $joinStr = "{$joinRule->getType()} JOIN {$sourceName} {$alias} ON {$sourceName}.{$destKey} = {$tableName}.{$foreignKey}";
-            if ($compareRule instanceof CompareRuleInterface) {
-                $sq = $this->buildComplexCompareRule($compareRule, $usePlaceholder);
-                $values = array_merge($values, $sq->getValues());
-                $keys = array_merge($keys, $sq->getKeys());
-                $joinStr .= ' AND ('.$sq.')';
+            $buildList = [];
+            $joinStr = "{$joinRule->getType()} JOIN {$sourceName} {$alias} ON ".($alias ?? $sourceName).".{$destKey} = {$tableName}.{$foreignKey}";
+
+            $joinQuery = $joinRule->getQueryCriteria();
+            if ($joinQuery instanceof QueryCriteriaInterface) {
+                foreach ($joinQuery->getCriteriaList() as $criteria) {
+                    $sq = $this->buildComplexCompareRule($criteria, $usePlaceholder);
+                    if (!$sq->isEmpty()) {
+                        $buildList[] = (string)$sq;
+                        $values = array_merge($values, $sq->getValues());
+                        $keys = array_merge($keys, $sq->getKeys());
+                    }
+                }
+            }
+
+            if (!empty($buildList)) {
+                $joinStr .= ' AND ('.implode(' AND ', $buildList).')';
             }
 
             $joinStrList[] = $joinStr;

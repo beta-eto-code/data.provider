@@ -9,16 +9,16 @@ use Closure;
 interface DataProviderInterface
 {
     /**
-     * @param Closure $mapper - function(array $data): array
+     * @param callable $mapper - function(array $data): array
      * @return void
      */
-    public function setMapperForRead(Closure $mapper);
+    public function setMapperForRead(callable $mapper);
 
     /**
-     * @param Closure $mapper - function(array $data): array
+     * @param callable $mapper - function(array $data): array
      * @return void
      */
-    public function setMapperForSave(Closure $mapper);
+    public function setMapperForSave(callable $mapper);
 
     /**
      * @return string
@@ -26,23 +26,29 @@ interface DataProviderInterface
     public function getSourceName(): string;
 
     /**
-     * @param QueryCriteriaInterface $query
+     * @param QueryCriteriaInterface|null $query
      * @return array
      */
-    public function getData(QueryCriteriaInterface $query): array;
+    public function getData(QueryCriteriaInterface $query = null): array;
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return int
+     * @return \Iterator
      */
-    public function getDataCount(QueryCriteriaInterface $query): int;
+    public function getIterator(QueryCriteriaInterface $query): \Iterator;
 
     /**
-     * @param array $data
+     * @param QueryCriteriaInterface|null $query
+     * @return int
+     */
+    public function getDataCount(QueryCriteriaInterface $query = null): int;
+
+    /**
+     * @param array|\ArrayObject $data
      * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
-    public function save(array $data, QueryCriteriaInterface $query = null): PkOperationResultInterface;
+    public function save(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface;
 
     /**
      * @param QueryCriteriaInterface $query
@@ -71,14 +77,20 @@ interface DataProviderInterface
     public function getPkName(): ?string;
 
     /**
-     * @param array $data
+     * @param array|\ArrayObject $data
      * @return void
      */
-    public function clearPk(array &$data);
+    public function clearPk(&$data);
 
     /**
-     * @param array $data
+     * @param array|\ArrayObject $data
      * @return mixed
      */
-    public function getPkValue(array $data);
+    public function getPkValue($data);
+
+    /**
+     * @param array|\ArrayObject $data
+     * @return QueryCriteriaInterface|null
+     */
+    public function createPkQuery($data): ?QueryCriteriaInterface;
 }

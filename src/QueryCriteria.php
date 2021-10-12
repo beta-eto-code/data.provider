@@ -184,11 +184,45 @@ class QueryCriteria implements QueryCriteriaInterface
         return new DefaultDataChecker($this);
     }
 
+    /**
+     * @return bool
+     */
+    public function isEmptyCriteria(): bool
+    {
+        return empty($this->criteriaList);
+    }
+
+    /**
+     * @param string $name
+     * @param string $operation
+     * @return bool
+     */
+    public function hasCriteria(string $name, string $operation): bool
+    {
+        if (emtpy($this->criteriaList)) {
+            return false;
+        }
+
+        foreach ($this->criteriaList as $compareRule) {
+            if ($compareRule->getOperation() === $operation && $compareRule->getKey() === $name) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array
+     */
     public function getGroup(): array
     {
         return (array)$this->group;
     }
 
+    /**
+     * @return string
+     */
     public function getHash(): string
     {
         return '';

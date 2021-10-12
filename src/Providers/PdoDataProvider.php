@@ -72,24 +72,30 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     }
 
     /**
-     * @param QueryCriteriaInterface $query
-     * @return array
+     * @param QueryCriteriaInterface|null $query
+     * @return \Iterator
      */
-    protected function getDataInternal(QueryCriteriaInterface $query): array
+    protected function getInternalIterator(QueryCriteriaInterface $query = null): \Iterator
     {
+        $query = $query ?? new QueryCriteria();
         $sqlQuery = $this->sqlBuilder->buildSelectQuery($query, $this->tableName, true);
         $sth = $this->connection->prepare((string)$sqlQuery);
         $sth->execute($sqlQuery->getValues());
 
-        return $sth->fetchAll(PDO::FETCH_ASSOC);
+        while ($item = $sth->fetch(PDO::FETCH_ASSOC)) {
+            yield $item;
+        }
+
+        return new \EmptyIterator();
     }
 
     /**
      * @param QueryCriteriaInterface $query
      * @return int
      */
-    public function getDataCount(QueryCriteriaInterface $query): int
+    public function getDataCount(QueryCriteriaInterface $query = null): int
     {
+        $query = $query ?? new QueryCriteria();
         $whereBlock = $this->sqlBuilder->buildWhereBlock($query, true);
         $sql = "SELECT COUNT(*) as cnt FROM {$this->tableName} {$whereBlock}";
         $sth = $this->connection->prepare($sql);
@@ -100,22 +106,27 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     }
 
     /**
-     * @param array $data
+     * @param array|\ArrayObject $data
      * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
-    protected function saveInternal(array $data, QueryCriteriaInterface $query = null): PkOperationResultInterface
+    protected function saveInternal(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
         if (empty($query)) {
             $sqlQuery = $this->sqlBuilder->buildInsertQuery($data, $this->tableName, true);
             $sth = $this->connection->prepare((string)$sqlQuery);
             $isSuccess = $sth->execute($sqlQuery->getValues());
 
-            return  $isSuccess ?
+            if ($isSuccess) {
+                $pkValue = $this->connection->lastInsertId();
+                $data[$this->getPkName()] = $id;
+
                 new OperationResult(null, [
                     'data' => $data
-                ], $this->connection->lastInsertId()) :
-                new OperationResult(
+                ], $pkValue);
+            }
+
+            return new OperationResult(
                     'Ошибка добавления записи:'.implode(', ', $sth->errorInfo()),
                     [
                         'data' => $data,

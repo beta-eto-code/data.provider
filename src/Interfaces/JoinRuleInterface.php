@@ -47,10 +47,25 @@ interface JoinRuleInterface
     public function getDestKey(): string;
 
     /**
-     * @param $data
-     * @return mixed
+     * @param $item
+     * @param array|null $destItems
+     * @param array|null $select
+     * @return \Iterator
      */
-    public function loadTo(&$data);
+    public function processJoinToItem($item, array $destItems = null, array $select = null): \Iterator;
+
+    /**
+     * @param $data
+     * @param array|null $select
+     * @return void
+     */
+    public function loadTo(&$data, array $select = null);
+
+    /**
+     * @param array $item
+     * @return bool
+     */
+    public function assertItem(array $item): bool;
 
     /**
      * @param $data

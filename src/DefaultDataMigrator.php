@@ -130,7 +130,7 @@ class DefaultDataMigrator implements DataMigratorInterface
         }
 
         $updateResultList = [];
-        $dataForImport = $this->sourceProvider->getData($query, $compareRule);
+        $dataForImport = $this->sourceProvider->getData($query);
         if (is_string($compareRule)) {
             $dataForInsert = $this->getDataForInsert($dataForImport, $compareRule);
 

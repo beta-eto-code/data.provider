@@ -57,17 +57,20 @@ class SqlBuilderMySql extends SqlBuilderBase
         bool $usePlaceholder = false
     ): SqlQueryInterface
     {
+        $joinBlock = $this->buildJoinBlock($queryCriteria, $tableName, $usePlaceholder);
         $whereBlock = $this->buildWhereBlock($queryCriteria, $usePlaceholder);
         $orderBlock = $this->buildOrderBlock($queryCriteria->getOrderBy(), $usePlaceholder);
         $limitOffsetBlock = $this->buildLimitOffsetBlock($queryCriteria, $usePlaceholder);
 
-        $sql = "DELETE FROM {$tableName} {$whereBlock} {$orderBlock} {$limitOffsetBlock}";
+        $sql = "DELETE FROM {$tableName} {$joinBlock} {$whereBlock} {$orderBlock} {$limitOffsetBlock}";
 
-        $values = $whereBlock->getValues();
+        $values = $joinBlock->getValues();
+        $values = array_merge($values, $whereBlock->getValues());
         $values = array_merge($values, $orderBlock->getValues());
         $values = array_merge($values, $limitOffsetBlock->getValues());
 
-        $keys = $whereBlock->getKeys();
+        $keys = $joinBlock->getKeys();
+        $keys = array_merge($keys, $whereBlock->getKeys());
         $keys = array_merge($keys, $orderBlock->getKeys());
         $keys = array_merge($keys, $limitOffsetBlock->getKeys());
 
@@ -105,16 +108,19 @@ class SqlBuilderMySql extends SqlBuilderBase
         bool $usePlaceholder = false
     ): SqlQueryInterface
     {
+        $joinBlock = $this->buildJoinBlock($queryCriteria, $tableName, $usePlaceholder);
         $whereBlock = $this->buildWhereBlock($queryCriteria, $usePlaceholder);
         $orderBlock = $this->buildOrderBlock($queryCriteria->getOrderBy(), $usePlaceholder);
         $limitOffsetBlock = $this->buildLimitOffsetBlock($queryCriteria, $usePlaceholder);
 
-        $values = array_values($data);
+        $values = $whereBlock->getValues();
+        $values = array_merge($values, $data);
         $values = array_merge($values, $whereBlock->getValues());
         $values = array_merge($values, $orderBlock->getValues());
         $values = array_merge($values, $limitOffsetBlock->getValues());
 
-        $keys = array_keys($data);
+        $keys = $whereBlock->getKeys();
+        $keys = array_merge($keys, $data);
         $keys = array_merge($keys, $whereBlock->getKeys());
         $keys = array_merge($keys, $orderBlock->getKeys());
         $keys = array_merge($keys, $limitOffsetBlock->getKeys());
@@ -124,7 +130,7 @@ class SqlBuilderMySql extends SqlBuilderBase
             $setList[] = "{$key} = ".$this->prepareCauseValue($value, $usePlaceholder);
         }
 
-        $sql = "UPDATE {$tableName} SET ".implode(', ', $setList). " {$whereBlock} {$orderBlock} {$limitOffsetBlock}";
+        $sql = "UPDATE {$tableName} {$joinBlock} SET ".implode(', ', $setList). " {$whereBlock} {$orderBlock} {$limitOffsetBlock}";
 
         return new SqlQuery($sql, $values, $keys);
     }

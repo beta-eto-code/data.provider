@@ -90,9 +90,21 @@ interface QueryCriteriaInterface
     public function addCriteria(string $name, string $operation, $value): CompareRuleInterface;
 
     /**
+     * @param string $name
+     * @param string $operation
+     * @return bool
+     */
+    public function hasCriteria(string $name, string $operation): bool;
+
+    /**
      * @return DataCheckerInterface
      */
     public function createDataChecker(): DataCheckerInterface;
+
+    /**
+     * @return bool
+     */
+    public function isEmptyCriteria(): bool;
 
     /**
      * @return CompareRuleInterface[]
