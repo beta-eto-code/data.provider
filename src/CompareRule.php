@@ -203,6 +203,15 @@ class CompareRule implements CompareRuleInterface
     }
 
     /**
+     * @param CompareRuleInterface $compareRule
+     * @return void
+     */
+    public function orCompareRule(CompareRuleInterface $compareRule)
+    {
+        $this->or[] = $compareRule;
+    }
+
+    /**
      * @param string $name
      * @param string $operation
      * @param $value
@@ -215,6 +224,15 @@ class CompareRule implements CompareRuleInterface
         $this->and[] = $compareRule;
 
         return $compareRule;
+    }
+
+    /**
+     * @param CompareRuleInterface $compareRule
+     * @return void
+     */
+    public function andCompareRule(CompareRuleInterface $compareRule)
+    {
+        $this->and[] = $compareRule;
     }
 
     /**

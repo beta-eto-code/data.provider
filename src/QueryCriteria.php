@@ -94,6 +94,16 @@ class QueryCriteria implements QueryCriteriaInterface
     }
 
     /**
+     * @param CompareRuleInterface $compareRule
+     * @return void
+     */
+    public function addCompareRule(CompareRuleInterface $compareRule)
+    {
+        $key = $compareRule->getOperation().$compareRule->getKey();
+        $this->criteriaList[$key] = $compareRule;
+    }
+
+    /**
      * @return CompareRuleInterface[]
      */
     public function getCriteriaList(): array

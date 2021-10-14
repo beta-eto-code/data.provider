@@ -90,6 +90,12 @@ interface QueryCriteriaInterface
     public function addCriteria(string $name, string $operation, $value): CompareRuleInterface;
 
     /**
+     * @param CompareRuleInterface $compareRule
+     * @return void
+     */
+    public function addCompareRule(CompareRuleInterface $compareRule);
+
+    /**
      * @param string $name
      * @param string $operation
      * @return bool

@@ -65,6 +65,12 @@ interface CompareRuleInterface
     public function or(string $name, string $operation, $value, ?string $alias = null): CompareRuleInterface;
 
     /**
+     * @param CompareRuleInterface $compareRule
+     * @return void
+     */
+    public function orCompareRule(CompareRuleInterface $compareRule);
+
+    /**
      * @param string $name
      * @param string $operation
      * @param $value
@@ -72,6 +78,12 @@ interface CompareRuleInterface
      * @return CompareRuleInterface
      */
     public function and(string $name, string $operation, $value, ?string $alias = null): CompareRuleInterface;
+
+    /**
+     * @param CompareRuleInterface $compareRule
+     * @return void
+     */
+    public function andCompareRule(CompareRuleInterface $compareRule);
 
     /**
      * @return boolean
