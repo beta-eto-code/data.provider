@@ -31,6 +31,7 @@ use Data\Provider\SqlBuilderMySql;
 use Data\Provider\QueryCriteria;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\Interfaces\CompareRuleInterface;
+use Data\Provider\Interfaces\TransactionOperationResultInterface;
 use Faker\Factory;
 
 $pdo = new PDO('mysql:host=localhost;dbname=mydb;charset=UTF8', 'username', 'password');
@@ -79,31 +80,43 @@ $query->addCriteria('id', CompareRuleInterface::IN, [1,3,5]);
 $query->setLimit(3);
 $query->setOrderBy('id', false);
 
-$pdoData = $pdoProvider->getData($query);       // данные из таблицы users соотвествующие критериям выборки
-$jsonData = $jsonProvider->getData($query);     // данные из файла users.json соотвествующие критериям выборки
-$xmlData = $xmlProvider->getData($query);       // данные из файла users.xml соотвествующие критериям выборки
-$csvData = $csvProvider->getData($query);       // данные из файла users.csv соотвествующие критериям выборки
-$fakerData = $fakerProvider->getData($query);   // сгенерированные данные (в этом примере через бибилотеку fzaninotto/faker)
+$pdoData = $pdoProvider->getData($query);                                   // данные из таблицы users соотвествующие критериям выборки
+$jsonData = $jsonProvider->getData($query);                                 // данные из файла users.json соотвествующие критериям выборки
+$xmlData = $xmlProvider->getData($query);                                   // данные из файла users.xml соотвествующие критериям выборки
+$csvData = $csvProvider->getData($query);                                   // данные из файла users.csv соотвествующие критериям выборки
+$fakerData = $fakerProvider->getData($query);                               // сгенерированные данные (в этом примере через бибилотеку fzaninotto/faker)
 
-$resultAdd = $pdoProvider->save([                                           // пример добавления данных
+$jsonProvider->startTransaction();                                          // запускаем транзакцию
+
+$dataForSave = [
     'name' => 'test',
     'email' => 'user@example.com'
-]);
+];
+$resultAdd = $pdoProvider->save($dataForSave);                              // пример добавления данных
 
 $updateQueryCriteria = new QueryCriteria();
 $updateQueryCriteria->addCriteria('id', CompareRuleInterface::MORE, 10);    // будем обновлять только записи со значением столбца id > 10
 $updateQueryCriteria->setLimit(10);                                         // обновим не более 10 записей соотвествующих условию выше
 
-$updateResult = $jsonProvider->save([                                       // пример обновления данных
+$dataForSave = [
     'name' => 'hidden',
-], $query);
-
+];
+$updateResult = $jsonProvider->save($dataForSave, $query);                  // пример обновления данных
 
 $deleteQuery = new QueryCriteria();
 $deleteQuery->addCriteria('name', CompareRuleInterface::LIKE, 'test');      // будем удалять всех пользователей в имени которых есть слово test
 $deleteQuery->setLimit(100);                                                // удалим не более 100 пользователей
 
 $csvProvider->remove($query);                                               // пример удаления данных
+
+$jsonProvider->commitTransaction();                                         // фиксируем транзакцию
+if ($updateResult instanceof TransactionOperationResultInterface) {         // выполнялась ли операция в транзакции
+    if ($updateResult->isFinished()) {                                      // проверяем стутс транзакции
+        $updateResult->hasError();                                          // проверяем наличие ошибки
+        $updateResult->getData();                                           // данные операции
+    }
+}
+
 ```
 
 ## Пример обмена данными между различными источниками
