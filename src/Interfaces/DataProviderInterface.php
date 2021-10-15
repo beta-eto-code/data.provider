@@ -4,7 +4,8 @@
 namespace Data\Provider\Interfaces;
 
 
-use Closure;
+use ArrayObject;
+use Iterator;
 
 interface DataProviderInterface
 {
@@ -33,9 +34,9 @@ interface DataProviderInterface
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return \Iterator
+     * @return Iterator
      */
-    public function getIterator(QueryCriteriaInterface $query): \Iterator;
+    public function getIterator(QueryCriteriaInterface $query): Iterator;
 
     /**
      * @param QueryCriteriaInterface|null $query
@@ -44,7 +45,7 @@ interface DataProviderInterface
     public function getDataCount(QueryCriteriaInterface $query = null): int;
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
@@ -77,19 +78,19 @@ interface DataProviderInterface
     public function getPkName(): ?string;
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @return void
      */
     public function clearPk(&$data);
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @return mixed
      */
     public function getPkValue($data);
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @return QueryCriteriaInterface|null
      */
     public function createPkQuery($data): ?QueryCriteriaInterface;

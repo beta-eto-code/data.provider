@@ -2,20 +2,30 @@
 
 namespace Data\Provider\Providers;
 
-use Bitrix\Crm\ConfigChecker\Iterator;
+use ArrayObject;
 use Closure;
 use Data\Provider\Interfaces\OperationResultInterface;
 use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\OperationResult;
+use Data\Provider\Providers\Traits\OperationStorageTrait;
 use Data\Provider\QueryCriteria;
+use Data\Provider\TransactionOperationResult;
+use EmptyIterator;
+use Iterator;
 
 abstract class BaseFileDataProvider extends BaseDataProvider
 {
+    use OperationStorageTrait;
+
     /**
      * @var int
      */
     protected $lastPk;
+    /**
+     * @var bool
+     */
+    private $transactionMode;
 
     /**
      * @return array
@@ -29,16 +39,33 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     abstract protected function saveDataList(array $dataList): bool;
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @return bool
      */
     abstract protected function appendData($data): bool;
 
+    public function save(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
+    {
+        if ($this->transactionMode) {
+            $transactionResult = new TransactionOperationResult();
+            $this->addOperation(function () use (&$data, $query, $transactionResult) {
+                $result = parent::save($data, $query);
+                $transactionResult->setResult($result);
+
+                return $result;
+            });
+
+            return $transactionResult;
+        }
+
+        return parent::save($data, $query);
+    }
+
     /**
      * @param QueryCriteriaInterface|null $query
-     * @return \Iterator
+     * @return Iterator
      */
-    protected function getInternalIterator(QueryCriteriaInterface $query = null): \Iterator
+    protected function getInternalIterator(QueryCriteriaInterface $query = null): Iterator
     {
         $dataList = $query->getOrderBy()->sortData(
             $this->readDataFromFile()
@@ -60,7 +87,7 @@ abstract class BaseFileDataProvider extends BaseDataProvider
             }
         }
 
-        return new \EmptyIterator();
+        return new EmptyIterator();
     }
 
     /**
@@ -68,6 +95,27 @@ abstract class BaseFileDataProvider extends BaseDataProvider
      * @return OperationResultInterface
      */
     public function remove(QueryCriteriaInterface $query): OperationResultInterface
+    {
+        if ($this->transactionMode) {
+            $transactionResult = new TransactionOperationResult();
+            $this->addOperation(function () use ($query, $transactionResult) {
+                $result = $this->internalRemove($query);
+                $transactionResult->setResult($result);
+
+                return $result;
+            });
+
+            return $transactionResult;
+        }
+
+        return $this->internalRemove($query);
+    }
+
+    /**
+     * @param QueryCriteriaInterface $query
+     * @return OperationResultInterface
+     */
+    private function internalRemove(QueryCriteriaInterface $query): OperationResultInterface
     {
         $errorMessage = 'Данные для удаления не найдены';
         $listData = $this->readDataFromFile();
@@ -97,7 +145,7 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
@@ -211,5 +259,36 @@ abstract class BaseFileDataProvider extends BaseDataProvider
             $this->lastPk = $lastPk + 1;
             $data[$this->pkName] = $this->lastPk;
         }
+    }
+
+    /**
+     * @return bool
+     */
+    public function startTransaction(): bool
+    {
+        $this->transactionMode = true;
+        return true;
+    }
+
+    /**
+     * @return bool
+     */
+    public function commitTransaction(): bool
+    {
+        $this->transactionMode = false;
+        $this->executeOperations();
+
+        return true;
+    }
+
+    /**
+     * @return bool
+     */
+    public function rollbackTransaction(): bool
+    {
+        $this->transactionMode = false;
+        $this->clearOperations();
+
+        return true;
     }
 }

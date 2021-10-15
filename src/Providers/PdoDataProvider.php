@@ -2,8 +2,8 @@
 
 namespace Data\Provider\Providers;
 
+use ArrayObject;
 use Closure;
-use Data\Provider\Interfaces\CompareRuleInterface;
 use Data\Provider\Interfaces\OperationResultInterface;
 use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
@@ -11,6 +11,8 @@ use Data\Provider\Interfaces\SqlBuilderInterface;
 use Data\Provider\Interfaces\SqlRelationProviderInterface;
 use Data\Provider\OperationResult;
 use Data\Provider\QueryCriteria;
+use EmptyIterator;
+use Iterator;
 use PDO;
 
 class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInterface
@@ -64,18 +66,10 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     }
 
     /**
-     * @return Closure|null
-     */
-    public function getDataHandler(): ?Closure
-    {
-        return $this->dataHandler;
-    }
-
-    /**
      * @param QueryCriteriaInterface|null $query
-     * @return \Iterator
+     * @return Iterator
      */
-    protected function getInternalIterator(QueryCriteriaInterface $query = null): \Iterator
+    protected function getInternalIterator(QueryCriteriaInterface $query = null): Iterator
     {
         $query = $query ?? new QueryCriteria();
         $sqlQuery = $this->sqlBuilder->buildSelectQuery($query, $this->tableName, true);
@@ -86,11 +80,11 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
             yield $item;
         }
 
-        return new \EmptyIterator();
+        return new EmptyIterator();
     }
 
     /**
-     * @param QueryCriteriaInterface $query
+     * @param QueryCriteriaInterface|null $query
      * @return int
      */
     public function getDataCount(QueryCriteriaInterface $query = null): int
@@ -106,7 +100,7 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     }
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
@@ -119,9 +113,9 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
 
             if ($isSuccess) {
                 $pkValue = $this->connection->lastInsertId();
-                $data[$this->getPkName()] = $id;
+                $data[$this->getPkName()] = $pkValue;
 
-                new OperationResult(null, [
+                return new OperationResult(null, [
                     'data' => $data
                 ], $pkValue);
             }

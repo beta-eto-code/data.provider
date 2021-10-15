@@ -2,12 +2,16 @@
 
 namespace Data\Provider\Interfaces;
 
-interface OperationResultInterface
+use Iterator;
+use IteratorAggregate;
+
+interface OperationResultInterface extends IteratorAggregate
 {
     /**
+     * @param bool $recursiveMode
      * @return bool
      */
-    public function hasError(): bool;
+    public function hasError(bool $recursiveMode = false): bool;
 
     /**
      * @return string
@@ -18,4 +22,15 @@ interface OperationResultInterface
      * @return mixed
      */
     public function getData();
+
+    /**
+     * @param OperationResultInterface $operationResult
+     * @return mixed
+     */
+    public function addNext(OperationResultInterface $operationResult);
+
+    /**
+     * @return Iterator
+     */
+    public function getErrorIterator(): Iterator;
 }

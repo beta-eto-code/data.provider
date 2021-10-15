@@ -212,7 +212,7 @@ class JoinRule implements JoinRuleInterface
      */
     public function assertItem(array $item): bool
     {
-        return $this->filterByJoinData->assertWithData($itemData);
+        return $this->filterByJoinData->assertWithData($item);
     }
 
     /**

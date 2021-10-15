@@ -6,7 +6,9 @@ use Data\Provider\Interfaces\CompareRuleInterface;
 use Data\Provider\Interfaces\DataMigratorInterface;
 use Data\Provider\Interfaces\DataProviderInterface;
 use Data\Provider\Interfaces\MigrateResultInterface;
+use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
+use Exception;
 
 class DefaultDataMigrator implements DataMigratorInterface
 {
@@ -27,7 +29,6 @@ class DefaultDataMigrator implements DataMigratorInterface
 
     /**
      * @param QueryCriteriaInterface $query
-     * @param string|null $sourcePkKey
      * @return MigrateResultInterface
      */
     public function runInsert(QueryCriteriaInterface $query): MigrateResultInterface
@@ -60,6 +61,7 @@ class DefaultDataMigrator implements DataMigratorInterface
 
     /**
      * @param array $dataList
+     * @param string|null $keyName
      * @return array
      */
     private function getDataForUpdate(array $dataList, string $keyName = null): array
@@ -78,6 +80,7 @@ class DefaultDataMigrator implements DataMigratorInterface
 
     /**
      * @param array $dataList
+     * @param string|null $keyName
      * @return array
      */
     private function getDataForInsert(array $dataList, string $keyName = null): array
@@ -98,11 +101,11 @@ class DefaultDataMigrator implements DataMigratorInterface
     }
 
     /**
-     * @param OperationResult $result
+     * @param PkOperationResultInterface $result
      * @param array $data
      * @return OperationResult
      */
-    private function prepareResult(OperationResult $result, array $data): OperationResult
+    private function prepareResult(PkOperationResultInterface $result, array $data): OperationResult
     {
         $errorMessage = $result->getErrorMessage();
 
@@ -117,6 +120,7 @@ class DefaultDataMigrator implements DataMigratorInterface
      * @param Closure|string $compareRule - key for compare value or closure function(array $dataImport): QueryCriteriaInterface
      * @param bool $insertOnFailUpdate
      * @return MigrateResultInterface
+     * @throws Exception
      */
     public function runUpdate(
         QueryCriteria $query,
@@ -126,7 +130,7 @@ class DefaultDataMigrator implements DataMigratorInterface
     {
         $compareRule = is_null($compareRule) ? $this->targetProvider->getPkName() : $compareRule;
         if (!is_string($compareRule) && !is_callable($compareRule)) {
-            throw new \Exception('invalid compare rule for update data');
+            throw new Exception('invalid compare rule for update data');
         }
 
         $updateResultList = [];
@@ -137,7 +141,6 @@ class DefaultDataMigrator implements DataMigratorInterface
             $targetPkName = $this->targetProvider->getPkName();
             if (!empty($targetPkName)) {
                 foreach ($this->getDataForUpdate($dataForImport, $compareRule) as $pkValue => $item) {
-                    $sourcePk = $this->sourceProvider->getPkValue($item);
                     $query = new QueryCriteria();
                     $query->addCriteria($this->targetProvider->getPkName(), CompareRuleInterface::EQUAL, $pkValue);
                     $updateResult = $this->targetProvider->save($item, $query);
@@ -164,7 +167,7 @@ class DefaultDataMigrator implements DataMigratorInterface
                     if ($insertOnFailUpdate && $updateResult->hasError()) {
                         $dataForInsert[] = $item;
                     } else {
-                        $updateResultList[] = $this->prepareResult($updateResult, $item);;
+                        $updateResultList[] = $this->prepareResult($updateResult, $item);
                     }
                 }
             }

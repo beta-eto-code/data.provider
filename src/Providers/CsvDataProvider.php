@@ -2,13 +2,6 @@
 
 namespace Data\Provider\Providers;
 
-use Closure;
-use Data\Provider\Interfaces\DataProviderInterface;
-use Data\Provider\Interfaces\OperationResultInterface;
-use Data\Provider\Interfaces\QueryCriteriaInterface;
-use Data\Provider\OperationResult;
-use Data\Provider\QueryCriteria;
-
 class CsvDataProvider extends BaseFileDataProvider
 {
     /**
@@ -89,7 +82,7 @@ class CsvDataProvider extends BaseFileDataProvider
      * @param array $row
      * @return array
      */
-    private function readItem($headers, array $row): array
+    private function readItem(array $headers, array $row): array
     {
         $item = [];
         foreach ($row as $i => $value) {
@@ -192,7 +185,7 @@ class CsvDataProvider extends BaseFileDataProvider
      * @param array $data
      * @return array
      */
-    private function prepareItemForSave($headers, array $data): array
+    private function prepareItemForSave(array $headers, array $data): array
     {
         $item = [];
         foreach ($headers as $i => $key) {
@@ -206,36 +199,11 @@ class CsvDataProvider extends BaseFileDataProvider
 
     /**
      * @param $file
-     * @param array $headers
      * @param array $data
      * @return int|bool
      */
     private function saveItem($file, array $data)
     {
         return fputcsv($file, $data, $this->separator, $this->enclusure, $this->escape);
-    }
-
-    /**
-     * @return bool
-     */
-    public function startTransaction(): bool
-    {
-        return false;
-    }
-
-    /**
-     * @return bool
-     */
-    public function commitTransaction(): bool
-    {
-        return false;
-    }
-
-    /**
-     * @return bool
-     */
-    public function rollbackTransaction(): bool
-    {
-        return false;
     }
 }

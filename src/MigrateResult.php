@@ -41,7 +41,9 @@ class MigrateResult implements MigrateResultInterface
     {
         $result = [];
         foreach ($this->resultList as $operationResult) {
-            $result[] = $operationResult->getData();
+            foreach ($operationResult as $result) {
+                $result[] = $result->getData();
+            }
         }
 
         return $result;
@@ -53,7 +55,7 @@ class MigrateResult implements MigrateResultInterface
     public function hasErrors(): bool
     {
         foreach ($this->resultList as $operationResult) {
-            if ($operationResult->hasError()) {
+            if ($operationResult->hasError(true)) {
                 return true;
             }
         }
@@ -68,8 +70,10 @@ class MigrateResult implements MigrateResultInterface
     {
         $result = [];
         foreach ($this->resultList as $operationResult) {
-            if ($operationResult->hasError()) {
-                $result[] = $operationResult;
+            foreach ($operationResult as $result) {
+                if ($result->hasError()) {
+                    $result[] = $result;
+                }
             }
         }
 

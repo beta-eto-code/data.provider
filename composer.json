@@ -20,7 +20,16 @@
       "Data\\Provider\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Data\\Provider\\Tests\\": "tests/"
+    }
+  },
   "require-dev": {
-    "fzaninotto/faker": "^1.9"
+    "fzaninotto/faker": "^1.9",
+    "phpunit/phpunit": "^8.5"
+  },
+  "scripts": {
+    "test": "phpunit"
   }
 }

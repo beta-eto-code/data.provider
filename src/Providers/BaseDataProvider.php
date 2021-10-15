@@ -2,15 +2,16 @@
 
 namespace Data\Provider\Providers;
 
-use Bitrix\Crm\ConfigChecker\Iterator;
+use ArrayObject;
 use Closure;
 use Data\Provider\Interfaces\CompareRuleInterface;
 use Data\Provider\Interfaces\DataProviderInterface;
-use Data\Provider\Interfaces\OperationResultInterface;
 use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\Interfaces\SqlRelationProviderInterface;
 use Data\Provider\QueryCriteria;
+use EmptyIterator;
+use Iterator;
 
 abstract class BaseDataProvider implements DataProviderInterface
 {
@@ -36,13 +37,13 @@ abstract class BaseDataProvider implements DataProviderInterface
 
     /**
      * @param QueryCriteriaInterface|null $query
-     * @return \Iterator
+     * @return Iterator
      */
-    abstract protected function getInternalIterator(QueryCriteriaInterface $query = null): \Iterator;
+    abstract protected function getInternalIterator(QueryCriteriaInterface $query = null): Iterator;
 
     /**
-     * @param array|\ArrayObject $data
-     * @param QueryCriteriaInterface $query
+     * @param array|ArrayObject $data
+     * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
     abstract protected function saveInternal(
@@ -68,9 +69,9 @@ abstract class BaseDataProvider implements DataProviderInterface
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return \Iterator
+     * @return Iterator
      */
-    public function getIterator(QueryCriteriaInterface $query): \Iterator
+    public function getIterator(QueryCriteriaInterface $query): Iterator
     {
         foreach ($this->getInternalIterator($query) as $item) {
             if (is_callable($this->mapperForRead)) {
@@ -99,7 +100,7 @@ abstract class BaseDataProvider implements DataProviderInterface
             }
         }
 
-        return new \EmptyIterator();
+        return new EmptyIterator();
     }
 
     /**
@@ -130,11 +131,11 @@ abstract class BaseDataProvider implements DataProviderInterface
     }
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @param QueryCriteriaInterface|null $query
      * @return PkOperationResultInterface
      */
-    final public function save(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
+    public function save(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
         if (is_callable($this->mapperForSave)) {
             $data = ($this->mapperForSave)($data);
@@ -152,7 +153,7 @@ abstract class BaseDataProvider implements DataProviderInterface
     }
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @return void
      */
     public function clearPk(&$data)
@@ -163,7 +164,7 @@ abstract class BaseDataProvider implements DataProviderInterface
     }
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @return mixed
      */
     public function getPkValue($data)
@@ -176,7 +177,7 @@ abstract class BaseDataProvider implements DataProviderInterface
     }
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @return QueryCriteriaInterface|
      */
     public function createPkQuery($data): ?QueryCriteriaInterface

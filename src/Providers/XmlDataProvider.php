@@ -3,10 +3,6 @@
 namespace Data\Provider\Providers;
 
 use Closure;
-use Data\Provider\Interfaces\DataProviderInterface;
-use Data\Provider\Interfaces\OperationResultInterface;
-use Data\Provider\Interfaces\QueryCriteriaInterface;
-use Data\Provider\OperationResult;
 use Exception;
 use SimpleXMLElement;
 use SimpleXMLIterator;
@@ -48,6 +44,7 @@ class XmlDataProvider extends BaseFileDataProvider
 
     /**
      * @return array
+     * @throws Exception
      */
     protected function readDataFromFile(): array
     {
@@ -58,11 +55,6 @@ class XmlDataProvider extends BaseFileDataProvider
         }
 
         for ($rootNode->rewind(); $rootNode->valid(); $rootNode->next()) {
-            if ($offset > 0) {
-                $offset--;
-                continue;
-            }
-
             $resultList[] = $this->readItem($rootNode->current());
         }
 
@@ -72,6 +64,7 @@ class XmlDataProvider extends BaseFileDataProvider
     /**
      * @param array $dataList
      * @return bool
+     * @throws Exception
      */
     protected function saveDataList(array $dataList): bool
     {
@@ -93,6 +86,7 @@ class XmlDataProvider extends BaseFileDataProvider
     /**
      * @param array $data
      * @return bool
+     * @throws Exception
      */
     protected function appendData($data): bool
     {
@@ -120,8 +114,6 @@ class XmlDataProvider extends BaseFileDataProvider
         }
 
         return $rootNode->addChild($this->listNodeName);
-
-        return null;
     }
 
     /**

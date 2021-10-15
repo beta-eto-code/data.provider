@@ -2,9 +2,10 @@
 
 namespace Data\Provider\Providers;
 
-use Bitrix\Crm\ConfigChecker\Iterator;
+use ArrayObject;
 use Closure;
 use Data\Provider\Interfaces\OperationResultInterface;
+use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\OperationResult;
 
@@ -27,6 +28,7 @@ class ClosureDataProvider extends BaseDataProvider
     {
         $this->defaultLimit = $defaultLimit;
         $this->itemHandler = $itemHandler;
+        parent::__construct();
     }
 
     /**
@@ -76,11 +78,11 @@ class ClosureDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param array|\ArrayObject $data
+     * @param array|ArrayObject $data
      * @param QueryCriteriaInterface|null $query
-     * @return OperationResultInterface
+     * @return PkOperationResultInterface
      */
-    protected function saveInternal(&$data, QueryCriteriaInterface $query = null): OperationResultInterface
+    protected function saveInternal(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
         return new OperationResult('Not implemented', ['data' => $data, 'query' => $query]);
     }

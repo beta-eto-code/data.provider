@@ -2,6 +2,8 @@
 
 namespace Data\Provider\Interfaces;
 
+use Iterator;
+
 interface JoinRuleInterface
 {
     const INNER_TYPE = 'INNER';
@@ -50,9 +52,9 @@ interface JoinRuleInterface
      * @param $item
      * @param array|null $destItems
      * @param array|null $select
-     * @return \Iterator
+     * @return Iterator
      */
-    public function processJoinToItem($item, array $destItems = null, array $select = null): \Iterator;
+    public function processJoinToItem($item, array $destItems = null, array $select = null): Iterator;
 
     /**
      * @param $data

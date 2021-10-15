@@ -209,7 +209,7 @@ class QueryCriteria implements QueryCriteriaInterface
      */
     public function hasCriteria(string $name, string $operation): bool
     {
-        if (emtpy($this->criteriaList)) {
+        if (empty($this->criteriaList)) {
             return false;
         }
 

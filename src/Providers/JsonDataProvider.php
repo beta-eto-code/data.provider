@@ -2,11 +2,8 @@
 
 namespace Data\Provider\Providers;
 
+use ArrayObject;
 use Closure;
-use Data\Provider\Interfaces\DataProviderInterface;
-use Data\Provider\Interfaces\OperationResultInterface;
-use Data\Provider\Interfaces\QueryCriteriaInterface;
-use Data\Provider\OperationResult;
 use DateTime;
 use Throwable;
 
@@ -70,10 +67,10 @@ class JsonDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @param array $data
+     * @param array|ArrayObject $data
      * @return bool
      */
-    protected function appendData(array $data): bool
+    protected function appendData($data): bool
     {
         $dataList = $this->readDataFromFile();
         $dataList[] = $data;
@@ -81,21 +78,8 @@ class JsonDataProvider extends BaseFileDataProvider
         return $this->saveDataList($dataList);
     }
 
-    public function normalizePk($pk)
-    {
-        if (is_int($pk)) {
-            return $pk;
-        }
-
-        if (is_object($pk) || is_array($pk)) {
-            return md5(serialize($pk));
-        }
-
-        return (string)$pk;
-    }
-
     /**
-     * @param array $data
+     * @param array|ArrayObject $data
      * @return array
      */
     private function normalizeArray($data): array

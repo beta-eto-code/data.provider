@@ -16,6 +16,10 @@ class DefaultDataChecker implements DataCheckerInterface
      * @var int
      */
     private $count;
+    /**
+     * @var int
+     */
+    private $offset;
 
     public function __construct(QueryCriteriaInterface $query)
     {
