@@ -120,7 +120,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             case CompareRuleInterface::NOT:
                 $sql = $propertyName.(is_null($compareValue) ?
                         ' IS NOT NULL' :
-                        " NOT ".$this->prepareCauseValue($compareValue, $usePlaceholder));
+                        " <> ".$this->prepareCauseValue($compareValue, $usePlaceholder));
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::LIKE:
                 if (!is_string($compareValue)) {

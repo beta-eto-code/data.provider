@@ -33,4 +33,14 @@ interface OperationResultInterface extends IteratorAggregate
      * @return Iterator
      */
     public function getErrorIterator(): Iterator;
+
+    /**
+     * @return int
+     */
+    public function getResultCount(): int;
+
+    /**
+     * @return int
+     */
+    public function getErrorResultCount(): int;
 }
