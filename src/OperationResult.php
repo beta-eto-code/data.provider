@@ -42,7 +42,9 @@ class OperationResult implements PkOperationResultInterface
     {
         if ($this->next instanceof OperationResultInterface) {
             $this->next->addNext($operationResult);
+            return;
         }
+        
         $this->next = $operationResult;
     }
 
@@ -95,9 +97,7 @@ class OperationResult implements PkOperationResultInterface
         yield $this;
 
         if ($this->next instanceof OperationResultInterface) {
-            yield $this->next;
-
-            foreach ($this->getIterator() as $operationResult) {
+            foreach ($this->next->getIterator() as $operationResult) {
                 yield $operationResult;
             }
         }
@@ -115,5 +115,21 @@ class OperationResult implements PkOperationResultInterface
         }
 
         return new EmptyIterator();
+    }
+
+    /**
+     * @return int
+     */
+    public function getResultCount(): int
+    {
+        return count(iterator_to_array($this));
+    }
+
+    /**
+     * @return int
+     */
+    public function getErrorResultCount(): int
+    {
+        return count(iterator_to_array($this->getErrorIterator()));
     }
 }
