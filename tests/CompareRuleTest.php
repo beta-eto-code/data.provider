@@ -17,7 +17,12 @@ class CompareRuleTest extends TestCase
     public function __construct($name = null, array $data = [], $dataName = '')
     {
         parent::__construct($name, $data, $dataName);
-        $this->defaultRule = new CompareRule('id', CompareRuleInterface::EQUAL, 1);
+        $this->defaultRule = new CompareRule(
+            'id',
+            CompareRuleInterface::EQUAL,
+            1,
+            'some_alias'
+        );
     }
 
     public function testGetOperation()
@@ -133,6 +138,6 @@ class CompareRuleTest extends TestCase
 
     public function testGetAlias()
     {
-
+        $this->assertEquals('some_alias', $this->defaultRule->getAlias());
     }
 }
