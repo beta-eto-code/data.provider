@@ -41,8 +41,8 @@ class MigrateResult implements MigrateResultInterface
     {
         $result = [];
         foreach ($this->resultList as $operationResult) {
-            foreach ($operationResult as $result) {
-                $result[] = $result->getData();
+            foreach ($operationResult as $r) {
+                $result[] = $r->getData();
             }
         }
 
@@ -70,9 +70,9 @@ class MigrateResult implements MigrateResultInterface
     {
         $result = [];
         foreach ($this->resultList as $operationResult) {
-            foreach ($operationResult as $result) {
-                if ($result->hasError()) {
-                    $result[] = $result;
+            foreach ($operationResult as $r) {
+                if ($r->hasError()) {
+                    $result[] = $r;
                 }
             }
         }
