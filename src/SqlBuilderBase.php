@@ -41,18 +41,24 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         }
 
         $fieldStrList = [];
+        $values = [];
+        $keys = [];
+        $index = 1;
         foreach ($queryCriteria->getSelect() as $key => $fieldName) {
+            $keys[] = 'select_'.$index++;
             if (is_string($key)) {
                 $fieldStrList[] = "{$fieldName} as {$key}";
+                $values[] = [$fieldName => $key];
             } else {
                 $fieldStrList[] = $fieldName;
+                $values[] = $fieldName;
             }
         }
 
         $strSelect = implode(', ', $fieldStrList);
         $sql = "SELECT {$strSelect} FROM {$tableName}";
 
-        return new SqlQuery($sql);
+        return new SqlQuery($sql, $values, $keys);
     }
 
     /**
@@ -89,7 +95,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             }
 
             return $usePlaceholder ?
-                '('. implode(',', array_fill(0, count($list), $this->placeholder)) :
+                '('. implode(',', array_fill(0, count($list), $this->placeholder)). ')' :
                 '('. implode(',', $list). ')';
         }
 
@@ -279,7 +285,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $values = [];
         $keys = [];
         foreach ($queryCriteria->getCriteriaList() as $criteria) {
-            $sq = $this->buildComplexCompareRule($criteria, $usePlaceholder);
+            $sq = $this->buildComplexCompareRule($criteria);
             if (!$sq->isEmpty()) {
                 $buildList[] = (string)$sq;
                 $values = array_merge($values, $sq->getValues());
@@ -309,16 +315,22 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $limit = $queryCriteria->getLimit();
         $offset = $queryCriteria->getOffset();
 
+        $values = [];
+        $keys = [];
         $result = '';
         if ($limit > 0) {
+            $values[] = $limit;
+            $keys[] = 'limit';
             $result .= "LIMIT {$limit}";
         }
 
         if ($offset > 0) {
+            $values[] = $offset;
+            $keys[] = 'offset';
             $result .= " OFFSET {$offset}";
         }
 
-        return new SqlQuery($result);
+        return new SqlQuery($result, $values, $keys);
     }
 
     /**
@@ -339,7 +351,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $prepareValue = implode(', ', $groupList);
         $sql = "GROUP BY {$prepareValue}";
 
-        return new SqlQuery($sql);
+        return new SqlQuery($sql, [$groupList], ['group']);
     }
 
     /**
@@ -406,15 +418,19 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             return new SqlQuery('');
         }
 
+        $values = [];
+        $keys = [];
         $strList = [];
         foreach($orderRule->getOrderData() as $key => $data) {
             $isAscending = (bool)$data['isAscending'];
             $alias = $data['alias'] ? "{$data['alias']}." : "";
             $strList[] = "{$alias}{$key} " . ($isAscending ? 'ASC' : 'DESC');
+            $values[] = ($isAscending ? 'ASC' : 'DESC');
+            $keys[] = "{$alias}{$key}";
         }
 
         $sql = "ORDER BY " . implode(', ', $strList);
 
-        return new SqlQuery($sql);
+        return new SqlQuery($sql, $values, $keys);
     }
 }
