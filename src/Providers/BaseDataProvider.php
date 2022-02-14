@@ -69,11 +69,31 @@ abstract class BaseDataProvider implements DataProviderInterface
 
     /**
      * @param QueryCriteriaInterface $query
+     * @param $dataItem
+     * @return array
+     */
+    private function applySelect(QueryCriteriaInterface $query, $dataItem): array
+    {
+        if (empty($query->getSelect())) {
+            return $dataItem;
+        }
+
+        $result = [];
+        foreach ($query->getSelect() as $key) {
+            $result[$key] = $dataItem[$key] ?? null;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param QueryCriteriaInterface $query
      * @return Iterator
      */
     public function getIterator(QueryCriteriaInterface $query): Iterator
     {
         foreach ($this->getInternalIterator($query) as $item) {
+            $item = $this->applySelect($query, $item);
             if (is_callable($this->mapperForRead)) {
                 $item = ($this->mapperForRead)($item);
             }
