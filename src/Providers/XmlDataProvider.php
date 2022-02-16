@@ -2,6 +2,7 @@
 
 namespace Data\Provider\Providers;
 
+use ArrayObject;
 use Closure;
 use Exception;
 use SimpleXMLElement;
@@ -9,6 +10,11 @@ use SimpleXMLIterator;
 
 class XmlDataProvider extends BaseFileDataProvider
 {
+    /**
+     * @var int
+     */
+    protected $lastPk = 0;
+
     /**
      * @var string
      */
@@ -33,8 +39,7 @@ class XmlDataProvider extends BaseFileDataProvider
         string $itemNodeName,
         string $pkName = null,
         string $arrayItemDefaultKey = 'arritem'
-    )
-    {
+    ) {
         parent::__construct($pkName);
         $this->filePath = $filePath;
         $this->listNodeName = $listNodeName;
@@ -43,8 +48,11 @@ class XmlDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @return array
+     * @return array[]
+     *
      * @throws Exception
+     *
+     * @psalm-return list<array>
      */
     protected function readDataFromFile(): array
     {
@@ -55,7 +63,10 @@ class XmlDataProvider extends BaseFileDataProvider
         }
 
         for ($rootNode->rewind(); $rootNode->valid(); $rootNode->next()) {
-            $resultList[] = $this->readItem($rootNode->current());
+            $value = $rootNode->current();
+            if ($value !== null) {
+                $resultList[] = $this->readItem($value);
+            }
         }
 
         return $resultList;
@@ -80,34 +91,40 @@ class XmlDataProvider extends BaseFileDataProvider
             }
         }
 
-        return (bool)$rootNode->asXML($this->filePath);
+        return $rootNode->asXML($this->filePath);
     }
 
     /**
      * @param array $data
      * @return bool
      * @throws Exception
+     *
+     * @psalm-param ArrayObject|array<array-key, mixed> $data
      */
     protected function appendData($data): bool
     {
         $rootNode = $this->getRootNode();
         $listNode = $this->getListNode($rootNode);
-        $item = $listNode->addChild($this->itemNodeName);
+        if (is_null($listNode)) {
+            return false;
+        }
 
+        $item = $listNode->addChild($this->itemNodeName);
         foreach ($data as $key => $value) {
             $this->addItemProp($item, $key, $value);
         }
 
-        return (bool)$rootNode->asXML($this->filePath);
+        /** @psalm-suppress RedundantCast */
+        return (bool) $rootNode->asXML($this->filePath);
     }
 
     /**
      * @param SimpleXMLIterator $rootNode
-     * @return SimpleXMLIterator|null
+     * @return SimpleXMLIterator|SimpleXMLElement|null
      */
-    private function getListNode(SimpleXMLIterator $rootNode): ?SimpleXMLIterator
+    private function getListNode(SimpleXMLIterator $rootNode): ?SimpleXMLElement
     {
-        for($rootNode->rewind(); $rootNode->valid(); $rootNode->next()) {
+        for ($rootNode->rewind(); $rootNode->valid(); $rootNode->next()) {
             if ($rootNode->key() === $this->listNodeName) {
                 return $rootNode->current();
             }
@@ -117,16 +134,15 @@ class XmlDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @return SimpleXMLIterator|null
      * @throws Exception
      */
-    private function getRootNode(): ?SimpleXMLIterator
+    private function getRootNode(): SimpleXMLIterator
     {
         if (!file_exists($this->filePath)) {
             return new SimpleXMLIterator('<root></root>');
         }
 
-        return new SimpleXMLIterator($this->filePath, null, true);
+        return new SimpleXMLIterator($this->filePath, 0, true);
     }
 
     /**
@@ -136,7 +152,7 @@ class XmlDataProvider extends BaseFileDataProvider
      */
     private function readItems(SimpleXMLIterator $xmlElement, array $result = []): array
     {
-        for($xmlElement->rewind(); $xmlElement->valid(); $xmlElement->next()) {
+        for ($xmlElement->rewind(); $xmlElement->valid(); $xmlElement->next()) {
             $result = $this->readItem($xmlElement, $result);
         }
 
@@ -152,18 +168,23 @@ class XmlDataProvider extends BaseFileDataProvider
     {
         for ($xmlElement->rewind(); $xmlElement->valid(); $xmlElement->next()) {
             $key = $xmlElement->key();
-            if(!array_key_exists($key, $result)){
-                if($xmlElement->hasChildren()){
+            $xmlElementValue = $xmlElement->current();
+            if (empty($xmlElementValue)) {
+                continue;
+            }
+
+            if (!array_key_exists($key, $result)) {
+                if ($xmlElement->hasChildren()) {
                     if ($key === $this->arrayItemDefaultKey) {
-                        $result[] = $this->readItems($xmlElement->current());
+                        $result[] = $this->readItems($xmlElementValue);
                     } else {
-                        $result[$key] = $this->readItems($xmlElement->current());
+                        $result[$key] = $this->readItems($xmlElementValue);
                     }
-                } else{
+                } else {
                     if ($key === $this->arrayItemDefaultKey) {
-                        $result[] = strval($xmlElement->current());
+                        $result[] = strval($xmlElementValue);
                     } else {
-                        $result[$key] = strval($xmlElement->current());
+                        $result[$key] = strval($xmlElementValue);
                     }
                 }
             }
@@ -181,7 +202,7 @@ class XmlDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @return Closure|null
+     * @return null
      */
     public function getDataHandler(): ?Closure
     {
@@ -191,7 +212,9 @@ class XmlDataProvider extends BaseFileDataProvider
     /**
      * @param SimpleXMLElement $element
      * @param string $key
-     * @param $value
+     * @param mixed $value
+     *
+     * @return void
      */
     public function addItemProp(SimpleXMLElement $element, string $key, $value)
     {

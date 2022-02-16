@@ -18,7 +18,8 @@ class TransactionOperationResult implements TransactionOperationResultInterface
     private $result;
 
     /**
-     * @return array|Traversable
+     * @return EmptyIterator|Traversable
+     *
      * @throws Exception
      */
     public function getIterator()
@@ -120,5 +121,21 @@ class TransactionOperationResult implements TransactionOperationResultInterface
     public function setResult(OperationResultInterface $operationResult)
     {
         $this->result = $operationResult;
+    }
+
+    /**
+     * @return int
+     */
+    public function getResultCount(): int
+    {
+        return $this->result instanceof OperationResultInterface ? $this->result->getResultCount() : 0;
+    }
+
+    /**
+     * @return int
+     */
+    public function getErrorResultCount(): int
+    {
+        return $this->result instanceof OperationResultInterface ? $this->result->getErrorResultCount() : 0;
     }
 }

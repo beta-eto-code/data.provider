@@ -31,21 +31,21 @@ class QueryCriteria implements QueryCriteriaInterface
     /**
      * @var string[]
      */
-    private $select;
+    private $select = [];
     /**
      * @var string[]
      */
-    private $group;
+    private $group = [];
 
     /**
      * @var JoinRuleInterface[]
      */
-    private $joinList;
+    private $joinList = [];
 
     public function __construct(CompareRuleInterface $compareRule = null)
     {
         if ($compareRule instanceof CompareRuleInterface) {
-            $this->criteriaList[$compareRule->getKey().$compareRule->getOperation()] = $compareRule;
+            $this->criteriaList[$compareRule->getKey() . $compareRule->getOperation()] = $compareRule;
         }
     }
 
@@ -81,14 +81,15 @@ class QueryCriteria implements QueryCriteriaInterface
     /**
      * @param string $name
      * @param string $operation
-     * @param $value
+     * @param mixed $value
      * @param string|null $alias
-     * @return CompareRuleInterface
+     *
+     * @return CompareRule
      */
     public function addCriteria(string $name, string $operation, $value, ?string $alias = null): CompareRuleInterface
     {
         $compareRule = new CompareRule($name, $operation, $value, $alias);
-        $this->criteriaList[$name.$operation] = $compareRule;
+        $this->criteriaList[$name . $operation] = $compareRule;
 
         return $compareRule;
     }
@@ -99,7 +100,7 @@ class QueryCriteria implements QueryCriteriaInterface
      */
     public function addCompareRule(CompareRuleInterface $compareRule)
     {
-        $key = $compareRule->getOperation().$compareRule->getKey();
+        $key = $compareRule->getOperation() . $compareRule->getKey();
         $this->criteriaList[$key] = $compareRule;
     }
 
@@ -131,7 +132,7 @@ class QueryCriteria implements QueryCriteriaInterface
             return $this->orderRule;
         }
 
-        return $this->orderRule = new OrderRule;
+        return $this->orderRule = new OrderRule();
     }
 
     /**
@@ -143,11 +144,13 @@ class QueryCriteria implements QueryCriteriaInterface
     }
 
     /**
-     * @return array
+     * @return string[]
+     *
+     * @psalm-return array<string>
      */
     public function getSelect(): array
     {
-        return (array)$this->select;
+        return $this->select;
     }
 
     /**
@@ -155,15 +158,15 @@ class QueryCriteria implements QueryCriteriaInterface
      * @param string $destKey
      * @param string $foreignKey
      * @param QueryCriteriaInterface|null $query
-     * @return JoinRuleInterface
+     *
+     * @return JoinRule
      */
     public function addJoin(
         DataProviderInterface $dataProvider,
         string $destKey,
         string $foreignKey,
         ?QueryCriteriaInterface $query = null
-    ): JoinRuleInterface
-    {
+    ): JoinRuleInterface {
         $join = new JoinRule($dataProvider, $foreignKey, $destKey, $query);
         $this->joinList[] = $join;
 
@@ -171,15 +174,19 @@ class QueryCriteria implements QueryCriteriaInterface
     }
 
     /**
-     * @return array|JoinRuleInterface[]
+     * @return JoinRuleInterface[]
+     *
+     * @psalm-return array<JoinRuleInterface>
      */
     public function getJoinList(): array
     {
-        return $this->joinList ?? [];
+        return $this->joinList;
     }
 
     /**
      * @param string[] $group
+     *
+     * @psalm-param  array<array-key, mixed> $group
      */
     public function setGroup(array $group)
     {
@@ -187,7 +194,7 @@ class QueryCriteria implements QueryCriteriaInterface
     }
 
     /**
-     * @return DataCheckerInterface
+     * @return DefaultDataChecker
      */
     public function createDataChecker(): DataCheckerInterface
     {
@@ -223,15 +230,19 @@ class QueryCriteria implements QueryCriteriaInterface
     }
 
     /**
-     * @return array
+     * @return string[]
+     *
+     * @psalm-return array<string>
      */
     public function getGroup(): array
     {
-        return (array)$this->group;
+        return $this->group;
     }
 
     /**
      * @return string
+     *
+     * @psalm-return ''
      */
     public function getHash(): string
     {

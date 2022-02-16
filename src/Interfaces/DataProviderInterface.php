@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Data\Provider\Interfaces;
-
 
 use ArrayObject;
 use Iterator;

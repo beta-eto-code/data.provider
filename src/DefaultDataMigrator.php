@@ -29,7 +29,8 @@ class DefaultDataMigrator implements DataMigratorInterface
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return MigrateResultInterface
+     *
+     * @return MigrateResult
      */
     public function runInsert(QueryCriteriaInterface $query): MigrateResultInterface
     {
@@ -42,7 +43,10 @@ class DefaultDataMigrator implements DataMigratorInterface
 
     /**
      * @param array $dataForImport
-     * @return array
+     *
+     * @return OperationResult[]
+     *
+     * @psalm-return list<OperationResult>
      */
     private function insertData(array $dataForImport): array
     {
@@ -67,8 +71,12 @@ class DefaultDataMigrator implements DataMigratorInterface
     private function getDataForUpdate(array $dataList, string $keyName = null): array
     {
         $keyName = $keyName ?? $this->sourceProvider->getPkName();
+        if (empty($keyName)) {
+            return [];
+        }
+
         $resultList = [];
-        foreach($dataList as $item) {
+        foreach ($dataList as $item) {
             $keyValue = $item[$keyName] ?? null;
             if (!empty($keyValue)) {
                 $resultList[$keyValue] = $item;
@@ -91,7 +99,7 @@ class DefaultDataMigrator implements DataMigratorInterface
         }
 
         $resultList = [];
-        foreach($dataList as $item) {
+        foreach ($dataList as $item) {
             if (empty($item[$keyName])) {
                 $resultList[] = $item;
             }
@@ -117,17 +125,19 @@ class DefaultDataMigrator implements DataMigratorInterface
 
     /**
      * @param QueryCriteria $query
-     * @param Closure|string $compareRule - key for compare value or closure function(array $dataImport): QueryCriteriaInterface
+     * @param callable|string|null $compareRule - key for compare value or closure
+     * function(array $dataImport): QueryCriteriaInterface
      * @param bool $insertOnFailUpdate
-     * @return MigrateResultInterface
+     *
+     * @return MigrateResult
+     *
      * @throws Exception
      */
     public function runUpdate(
         QueryCriteria $query,
         $compareRule = null,
         bool $insertOnFailUpdate = false
-    ): MigrateResultInterface
-    {
+    ): MigrateResultInterface {
         $compareRule = is_null($compareRule) ? $this->targetProvider->getPkName() : $compareRule;
         if (!is_string($compareRule) && !is_callable($compareRule)) {
             throw new Exception('invalid compare rule for update data');
@@ -142,12 +152,12 @@ class DefaultDataMigrator implements DataMigratorInterface
             if (!empty($targetPkName)) {
                 foreach ($this->getDataForUpdate($dataForImport, $compareRule) as $pkValue => $item) {
                     $query = new QueryCriteria();
-                    $query->addCriteria($this->targetProvider->getPkName(), CompareRuleInterface::EQUAL, $pkValue);
+                    $query->addCriteria($targetPkName, CompareRuleInterface::EQUAL, $pkValue);
                     $updateResult = $this->targetProvider->save($item, $query);
                     if ($insertOnFailUpdate && $updateResult->hasError()) {
                         $dataForInsert[] = $item;
                     } else {
-                        $updateResultList[] = $this->prepareResult($updateResult, $item);
+                        $updateResultList[] = $this->prepareResult($updateResult, (array)$item);
                     }
                 }
             }
@@ -158,26 +168,23 @@ class DefaultDataMigrator implements DataMigratorInterface
             return new MigrateResult($query, $resultList);
         }
 
-        if (is_callable($compareRule)) {
-            $dataForInsert = [];
-            foreach ($dataForImport as $item) {
-                $query = $compareRule($item);
-                if ($query instanceof QueryCriteriaInterface) {
-                    $updateResult = $this->targetProvider->save($item, $query);
-                    if ($insertOnFailUpdate && $updateResult->hasError()) {
-                        $dataForInsert[] = $item;
-                    } else {
-                        $updateResultList[] = $this->prepareResult($updateResult, $item);
-                    }
+
+        $dataForInsert = [];
+        foreach ($dataForImport as $item) {
+            $query = $compareRule($item);
+            if ($query instanceof QueryCriteriaInterface) {
+                $updateResult = $this->targetProvider->save($item, $query);
+                if ($insertOnFailUpdate && $updateResult->hasError()) {
+                    $dataForInsert[] = $item;
+                } else {
+                    $updateResultList[] = $this->prepareResult($updateResult, (array)$item);
                 }
             }
-
-            $insertResultList = $this->insertData($dataForInsert);
-            $resultList = array_merge($updateResultList, $insertResultList);
-
-            return new MigrateResult($query, $resultList);
         }
 
-        return new MigrateResult($query, []);
+        $insertResultList = $this->insertData($dataForInsert);
+        $resultList = array_merge($updateResultList, $insertResultList);
+
+        return new MigrateResult($query, $resultList);
     }
 }

@@ -16,12 +16,12 @@ use Iterator;
 abstract class BaseDataProvider implements DataProviderInterface
 {
     /**
-     * @var Closure|null
+     * @var callable|null
      */
     protected $mapperForRead;
 
     /**
-     * @var Closure|null
+     * @var callable|null
      */
     protected $mapperForSave;
 
@@ -69,10 +69,10 @@ abstract class BaseDataProvider implements DataProviderInterface
 
     /**
      * @param QueryCriteriaInterface $query
-     * @param $dataItem
+     * @param array $dataItem
      * @return array
      */
-    private function applySelect(QueryCriteriaInterface $query, $dataItem): array
+    private function applySelect(QueryCriteriaInterface $query, array $dataItem): array
     {
         if (empty($query->getSelect())) {
             return $dataItem;
@@ -88,7 +88,10 @@ abstract class BaseDataProvider implements DataProviderInterface
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return Iterator
+     *
+     * @return \Generator
+     *
+     * @psalm-return \Generator<int, array|mixed, mixed, EmptyIterator>
      */
     public function getIterator(QueryCriteriaInterface $query): Iterator
     {
@@ -101,7 +104,8 @@ abstract class BaseDataProvider implements DataProviderInterface
             $countJoin = 0;
             foreach ($query->getJoinList() as $joinRule) {
                 $joinDataProvider = $joinRule->getDataProvider();
-                if ($this instanceof SqlRelationProviderInterface &&
+                if (
+                    $this instanceof SqlRelationProviderInterface &&
                     $joinDataProvider instanceof SqlRelationProviderInterface
                 ) {
                     continue;
@@ -137,7 +141,8 @@ abstract class BaseDataProvider implements DataProviderInterface
 
         foreach ($query->getJoinList() as $joinRule) {
             $joinDataProvider = $joinRule->getDataProvider();
-            if ($this instanceof SqlRelationProviderInterface &&
+            if (
+                $this instanceof SqlRelationProviderInterface &&
                 $joinDataProvider instanceof SqlRelationProviderInterface
             ) {
                 continue;
@@ -147,7 +152,7 @@ abstract class BaseDataProvider implements DataProviderInterface
             $joinRule->filterData($dataList);
         }
 
-        return $dataList ?? [];
+        return $dataList;
     }
 
     /**
@@ -198,17 +203,23 @@ abstract class BaseDataProvider implements DataProviderInterface
 
     /**
      * @param array|ArrayObject $data
-     * @return QueryCriteriaInterface|
+     *
+     * @return QueryCriteria|null
      */
     public function createPkQuery($data): ?QueryCriteriaInterface
     {
+        $pkName = $this->getPkName();
+        if (empty($pkName)) {
+            return null;
+        }
+
         $value = $this->getPkValue($data);
         if (empty($value)) {
             return null;
         }
 
         $query = new QueryCriteria();
-        $query->addCriteria($this->getPkName(), CompareRuleInterface::EQUAL, $value);
+        $query->addCriteria($pkName, CompareRuleInterface::EQUAL, $value);
 
         return $query;
     }

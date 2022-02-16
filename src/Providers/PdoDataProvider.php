@@ -40,8 +40,7 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
         SqlBuilderInterface $sqlBuilder,
         string $pkName = null,
         ?Closure $dataHandler = null
-    )
-    {
+    ) {
         parent::__construct($pkName);
         $this->connection = $connection;
         $this->tableName = $tableName;
@@ -67,7 +66,10 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
 
     /**
      * @param QueryCriteriaInterface|null $query
-     * @return Iterator
+     *
+     * @return \Generator
+     *
+     * @psalm-return \Generator<int, array<string, null|scalar>, mixed, EmptyIterator>
      */
     protected function getInternalIterator(QueryCriteriaInterface $query = null): Iterator
     {
@@ -100,9 +102,12 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     }
 
     /**
-     * @param array|ArrayObject $data
+     * @param array $data
      * @param QueryCriteriaInterface|null $query
-     * @return PkOperationResultInterface
+     *
+     * @return OperationResult
+     *
+     * @psalm-suppress MoreSpecificImplementedParamType
      */
     protected function saveInternal(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
@@ -112,8 +117,11 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
             $isSuccess = $sth->execute($sqlQuery->getValues());
 
             if ($isSuccess) {
+                $pkName = $this->getPkName();
                 $pkValue = $this->connection->lastInsertId();
-                $data[$this->getPkName()] = $pkValue;
+                if (!empty($pkName)) {
+                    $data[$pkName] = $pkValue;
+                }
 
                 return new OperationResult(null, [
                     'data' => $data
@@ -121,12 +129,12 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
             }
 
             return new OperationResult(
-                    'Ошибка добавления записи:'.implode(', ', $sth->errorInfo()),
-                    [
+                'Ошибка добавления записи:' . implode(', ', $sth->errorInfo()),
+                [
                         'data' => $data,
                         'query' => $query,
                     ]
-                );
+            );
         }
 
         $sqlQuery = $this->sqlBuilder->buildUpdateQuery($query, $data, $this->tableName, true);
@@ -142,7 +150,7 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
                 ]
             ) :
             new OperationResult(
-                'Ошибка обновления записи:'.implode(', ', $sth->errorInfo()),
+                'Ошибка обновления записи:' . implode(', ', $sth->errorInfo()),
                 [
                     'data' => $data,
                     'query' => $query,
@@ -152,7 +160,8 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return OperationResultInterface
+     *
+     * @return OperationResult
      */
     public function remove(QueryCriteriaInterface $query): OperationResultInterface
     {
@@ -163,7 +172,7 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
         return  $isSuccess ?
             new OperationResult(null, ['query' => $query]) :
             new OperationResult(
-                'Ошибка обновления записи:'.implode(', ', $sth->errorInfo()),
+                'Ошибка обновления записи:' . implode(', ', $sth->errorInfo()),
                 ['query' => $query]
             );
     }

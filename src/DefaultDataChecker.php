@@ -56,7 +56,10 @@ class DefaultDataChecker implements DataCheckerInterface
 
     /**
      * @param array $dataList
-     * @return array
+     *
+     * @return array[]
+     *
+     * @psalm-return list<array>
      */
     public function filterDataList(array $dataList): array
     {

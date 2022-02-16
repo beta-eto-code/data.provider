@@ -12,6 +12,7 @@ use Data\Provider\Providers\Traits\OperationStorageTrait;
 use Data\Provider\QueryCriteria;
 use Data\Provider\TransactionOperationResult;
 use EmptyIterator;
+use Generator;
 use Iterator;
 
 abstract class BaseFileDataProvider extends BaseDataProvider
@@ -21,7 +22,8 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     /**
      * @var int
      */
-    protected $lastPk;
+    protected $lastPk = 0;
+
     /**
      * @var bool
      */
@@ -63,21 +65,27 @@ abstract class BaseFileDataProvider extends BaseDataProvider
 
     /**
      * @param QueryCriteriaInterface|null $query
-     * @return Iterator
+     *
+     * @return Generator
+     *
+     * @psalm-return Generator<int, array|mixed, mixed, EmptyIterator>
      */
     protected function getInternalIterator(QueryCriteriaInterface $query = null): Iterator
     {
+        if ($query === null) {
+            foreach ($this->readDataFromFile() as $dataItem) {
+                yield $dataItem;
+            }
+
+            return new EmptyIterator();
+        }
+
         $dataList = $query->getOrderBy()->sortData(
             $this->readDataFromFile()
         );
 
-        $dataChecker = !empty($query) ? $query->createDataChecker() : null;
+        $dataChecker = $query->createDataChecker();
         foreach ($dataList as $dataItem) {
-            if (empty($query)) {
-                yield $dataItem;
-                continue;
-            }
-
             if ($dataChecker->failByLimit()) {
                 break;
             }
@@ -92,7 +100,8 @@ abstract class BaseFileDataProvider extends BaseDataProvider
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return OperationResultInterface
+     *
+     * @return OperationResult|TransactionOperationResult
      */
     public function remove(QueryCriteriaInterface $query): OperationResultInterface
     {
@@ -113,9 +122,8 @@ abstract class BaseFileDataProvider extends BaseDataProvider
 
     /**
      * @param QueryCriteriaInterface $query
-     * @return OperationResultInterface
      */
-    private function internalRemove(QueryCriteriaInterface $query): OperationResultInterface
+    private function internalRemove(QueryCriteriaInterface $query): OperationResult
     {
         $errorMessage = 'Данные для удаления не найдены';
         $listData = $this->readDataFromFile();
@@ -145,9 +153,12 @@ abstract class BaseFileDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param array|ArrayObject $data
+     * @param array $data
      * @param QueryCriteriaInterface|null $query
-     * @return PkOperationResultInterface
+     *
+     * @return OperationResult
+     *
+     * @psalm-suppress MoreSpecificImplementedParamType
      */
     protected function saveInternal(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
@@ -156,6 +167,9 @@ abstract class BaseFileDataProvider extends BaseDataProvider
             $this->setPkForData($data);
             $pk = $this->getPkValue($data);
 
+            /**
+             * @psalm-suppress ReferenceConstraintViolation
+             */
             return $this->appendData($data) ?
                 new OperationResult(null, ['query' => $query, 'data' => $data], $pk) :
                 new OperationResult($errorMessage, ['query' => $query, 'data' => $data]);
@@ -185,7 +199,10 @@ abstract class BaseFileDataProvider extends BaseDataProvider
 
     /**
      * @param QueryCriteriaInterface|null $query
+     *
      * @return int
+     *
+     * @psalm-return 0|positive-int
      */
     public function getDataCount(QueryCriteriaInterface $query = null): int
     {
@@ -217,13 +234,16 @@ abstract class BaseFileDataProvider extends BaseDataProvider
             return 0;
         }
 
-        if (!is_null($this->lastPk)) {
-            return (int)$this->lastPk;
+        if (!empty($this->lastPk)) {
+            return $this->lastPk;
         }
 
         $query = new QueryCriteria();
         $query->setLimit(1);
-        $query->setOrderBy($this->pkName, false);
+        if (!empty($this->pkName)) {
+            $query->setOrderBy($this->pkName, false);
+        }
+
         $result = $this->getData($query);
         if (empty($result)) {
             return 0;
@@ -231,12 +251,14 @@ abstract class BaseFileDataProvider extends BaseDataProvider
 
         $lastItem = current($result);
 
-        return $this->lastPk = (int)($lastItem[$this->pkName] ?? 0);
+        return $this->lastPk = !empty($this->pkName) ? (int)($lastItem[$this->pkName] ?? 0) : 0;
     }
 
     /**
-     * @param $data
+     * @param ArrayObject|array $data
      * @param int|null $pk
+     *
+     * @return void
      */
     protected function setPkForData(&$data, int $pk = null)
     {
@@ -244,20 +266,25 @@ abstract class BaseFileDataProvider extends BaseDataProvider
             return;
         }
 
-        $pk = $data[$this->pkName] ?? null;
+        $pk = !empty($this->pkName) ? ($data[$this->pkName] ?? null) : null;
         if (!empty($pk)) {
             return;
         }
 
         $lastPk = $this->getLastPk();
         if ($pk > 0) {
-            $data[$this->pkName] = $pk;
+            if (!empty($this->pkName)) {
+                $data[$this->pkName] = $pk;
+            }
+
             if ($pk > $lastPk) {
                 $this->lastPk = $pk;
             }
         } else {
             $this->lastPk = $lastPk + 1;
-            $data[$this->pkName] = $this->lastPk;
+            if (!empty($this->pkName)) {
+                $data[$this->pkName] = $this->lastPk;
+            }
         }
     }
 

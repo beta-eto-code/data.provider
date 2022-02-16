@@ -14,10 +14,15 @@ interface DataMigratorInterface
 
     /**
      * @param QueryCriteria $query
-     * @param Closure|string|null $compareRule - key for compare value or closure function(array $dataImport): QueryCriteriaInterface
+     * @param callable|string|null $compareRule - key for compare value or closure
+     * function(array $dataImport): QueryCriteriaInterface
      * @param bool $insertOnFailUpdate
      * @return MigrateResultInterface
      * @params bool $insertOnFailUpdate
      */
-    public function runUpdate(QueryCriteria $query, $compareRule = null, bool $insertOnFailUpdate = false): MigrateResultInterface;
+    public function runUpdate(
+        QueryCriteria $query,
+        $compareRule = null,
+        bool $insertOnFailUpdate = false
+    ): MigrateResultInterface;
 }

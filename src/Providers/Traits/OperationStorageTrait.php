@@ -13,15 +13,15 @@ trait OperationStorageTrait
      */
     protected $operationList = [];
 
-    protected function addOperation(callable $fn)
+    protected function addOperation(callable $fn): void
     {
         $this->operationList[] = $fn;
     }
 
     /**
-     * @return OperationResultInterface[]|Iterator
+     * @psalm-return \Generator<int, mixed, mixed, \EmptyIterator>
      */
-    protected function executeOperations(): Iterator
+    protected function executeOperations(): \Generator
     {
         foreach ($this->operationList as $fnOperation) {
             yield $fnOperation();
@@ -32,7 +32,7 @@ trait OperationStorageTrait
         return new EmptyIterator();
     }
 
-    protected function clearOperations()
+    protected function clearOperations(): void
     {
         $this->operationList = [];
     }

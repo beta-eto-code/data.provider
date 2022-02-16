@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Data\Provider\Interfaces;
 
 interface OrderRuleInterface
@@ -15,7 +14,7 @@ interface OrderRuleInterface
      * @param bool $isAscending
      * @return mixed
      */
-    public function setOrderByKey(string $key, bool $isAscending = true);
+    public function setOrderByKey(string $key, bool $isAscending = true, ?string $alias = null);
 
     /**
      * @return array

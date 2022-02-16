@@ -7,10 +7,11 @@ use Data\Provider\Interfaces\CompareRuleInterface;
 use Data\Provider\Interfaces\DataProviderInterface;
 use Data\Provider\Interfaces\JoinRuleInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
+use EmptyIterator;
+use Generator;
 
 class JoinRule implements JoinRuleInterface
 {
-
     /**
      * @var string
      */
@@ -49,19 +50,23 @@ class JoinRule implements JoinRuleInterface
         string $foreignKey,
         string $destKey,
         ?QueryCriteriaInterface $query = null
-    )
-    {
+    ) {
         $this->dataProvider = $dataProvider;
         $this->foreignKey = $foreignKey;
         $this->destKey = $destKey;
         $this->query = $query;
+        $this->type = JoinRuleInterface::LEFT_TYPE;
+        $this->allItems = [];
+        $this->alias = '';
     }
 
     public function setType(string $type)
     {
-        if (in_array(
-            $type,
-            [JoinRuleInterface::INNER_TYPE, JoinRuleInterface::LEFT_TYPE, JoinRuleInterface::RIGHT_TYPE])
+        if (
+            in_array(
+                $type,
+                [JoinRuleInterface::INNER_TYPE, JoinRuleInterface::LEFT_TYPE, JoinRuleInterface::RIGHT_TYPE]
+            )
         ) {
             $this->type = $type;
         }
@@ -76,7 +81,7 @@ class JoinRule implements JoinRuleInterface
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public function getAlias(): ?string
     {
@@ -88,7 +93,7 @@ class JoinRule implements JoinRuleInterface
      */
     public function getType(): string
     {
-        return $this->type ?? JoinRuleInterface::LEFT_TYPE;
+        return $this->type;
     }
 
     /**
@@ -120,15 +125,16 @@ class JoinRule implements JoinRuleInterface
     }
 
     /**
-     * @param $item
+     * @param array|mixed $item
      * @param array|null $destItems
      * @param array|null $select
-     * @return \Iterator
+     *
+     * @return Generator|\Iterator
      */
     public function processJoinToItem($item, array $destItems = null, array $select = null): \Iterator
     {
         $count = 0;
-        $select = $select ?? $this->query->getSelect();
+        $select = $select ?? (!empty($this->query) ? $this->query->getSelect() : []);
 
         foreach ($destItems ?? $this->getAll() as $destItem) {
             if ($destItem[$this->destKey] === $item[$this->foreignKey]) {
@@ -144,20 +150,23 @@ class JoinRule implements JoinRuleInterface
         if ($count === 0 && $this->type === JoinRuleInterface::LEFT_TYPE) {
             yield $item;
         }
+
+        return new EmptyIterator();
     }
 
     /**
-     * @param $data
+     * @param array $data
+     * @param array|null $select
      * @return void
      */
     public function loadTo(&$data, array $select = null)
     {
-        $select = $select ?? $this->query->getSelect();
-        if (empty($select)) {
+        if (!($this->query instanceof QueryCriteriaInterface)) {
             return;
         }
 
-        if (!($this->query instanceof QueryCriteriaInterface) || empty($this->query->getSelect())) {
+        $select = $select ?? $this->query->getSelect();
+        if (empty($select)) {
             return;
         }
 
@@ -212,11 +221,15 @@ class JoinRule implements JoinRuleInterface
      */
     public function assertItem(array $item): bool
     {
+        if (empty($this->filterByJoinData)) {
+            return false;
+        }
+
         return $this->filterByJoinData->assertWithData($item);
     }
 
     /**
-     * @param $data
+     * @param array $data
      * @return void
      */
     public function filterData(&$data)
@@ -226,7 +239,7 @@ class JoinRule implements JoinRuleInterface
         }
 
         $result = [];
-        foreach($data as $itemData) {
+        foreach ($data as $itemData) {
             if ($this->assertItem($itemData)) {
                 $result[] = $itemData;
             }

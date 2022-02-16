@@ -8,6 +8,7 @@ use Data\Provider\Interfaces\OperationResultInterface;
 use Data\Provider\Interfaces\PkOperationResultInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\OperationResult;
+use Generator;
 
 class ClosureDataProvider extends BaseDataProvider
 {
@@ -33,7 +34,10 @@ class ClosureDataProvider extends BaseDataProvider
 
     /**
      * @param QueryCriteriaInterface|null $query
-     * @return \Iterator
+     *
+     * @return Generator
+     *
+     * @psalm-return Generator<int, mixed, mixed, \EmptyIterator>
      */
     protected function getInternalIterator(QueryCriteriaInterface $query = null): \Iterator
     {
@@ -50,6 +54,8 @@ class ClosureDataProvider extends BaseDataProvider
 
     /**
      * @return string
+     *
+     * @psalm-return 'closure'
      */
     public function getSourceName(): string
     {
@@ -57,9 +63,9 @@ class ClosureDataProvider extends BaseDataProvider
     }
 
     /**
-     * @return Closure|null
+     * @return null
      */
-    public function getDataHandler(): ?Closure
+    public function getDataHandler()
     {
         return null;
     }
@@ -80,7 +86,8 @@ class ClosureDataProvider extends BaseDataProvider
     /**
      * @param array|ArrayObject $data
      * @param QueryCriteriaInterface|null $query
-     * @return PkOperationResultInterface
+     *
+     * @return OperationResult
      */
     protected function saveInternal(&$data, QueryCriteriaInterface $query = null): PkOperationResultInterface
     {
@@ -88,12 +95,12 @@ class ClosureDataProvider extends BaseDataProvider
     }
 
     /**
-     * @param mixed $pk
+     * @param QueryCriteriaInterface $query
      * @return OperationResultInterface
      */
-    public function remove($pk): OperationResultInterface
+    public function remove(QueryCriteriaInterface $query): OperationResultInterface
     {
-        return new OperationResult('Not implemented', ['pk' => $pk]);
+        return new OperationResult('Not implemented', ['query' => $query]);
     }
 
     /**

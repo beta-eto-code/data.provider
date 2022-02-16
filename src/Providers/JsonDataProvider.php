@@ -22,8 +22,7 @@ class JsonDataProvider extends BaseFileDataProvider
         string $filePath,
         string $pkName = 'id',
         Closure $dataSaveHandler = null
-    )
-    {
+    ) {
         parent::__construct($pkName);
         $this->filePath = $filePath;
         $this->dataSaveHandler = $dataSaveHandler;
@@ -63,7 +62,8 @@ class JsonDataProvider extends BaseFileDataProvider
 
         return file_put_contents(
             $this->filePath,
-            json_encode($dataList,  JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)) !== false;
+            json_encode($dataList, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+        ) !== false;
     }
 
     /**
@@ -80,12 +80,15 @@ class JsonDataProvider extends BaseFileDataProvider
 
     /**
      * @param array|ArrayObject $data
-     * @return array
+     *
+     * @return (array|false|mixed|string)[]
+     *
+     * @psalm-return array<string, array|false|mixed|string>
      */
     private function normalizeArray($data): array
     {
         $result = [];
-        foreach($data as $key => $value) {
+        foreach ($data as $key => $value) {
             $name = str_replace(['[',']'], '', $key);
             if ($value instanceof DateTime) {
                 $value = $value->format('Y-m-d H:i:s');
@@ -98,7 +101,7 @@ class JsonDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @return Closure|null - function(array $data): array
+     * @return Closure|null
      */
     public function getDataHandler(): ?Closure
     {

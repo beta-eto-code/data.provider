@@ -6,9 +6,9 @@ use Iterator;
 
 interface JoinRuleInterface
 {
-    const INNER_TYPE = 'INNER';
-    const LEFT_TYPE = 'LEFT';
-    const RIGHT_TYPE = 'RIGHT';
+    public const INNER_TYPE = 'INNER';
+    public const LEFT_TYPE = 'LEFT';
+    public const RIGHT_TYPE = 'RIGHT';
 
     /**
      * @param string $type
@@ -49,7 +49,7 @@ interface JoinRuleInterface
     public function getDestKey(): string;
 
     /**
-     * @param $item
+     * @param mixed $item
      * @param array|null $destItems
      * @param array|null $select
      * @return Iterator
@@ -57,7 +57,7 @@ interface JoinRuleInterface
     public function processJoinToItem($item, array $destItems = null, array $select = null): Iterator;
 
     /**
-     * @param $data
+     * @param array $data
      * @param array|null $select
      * @return void
      */
@@ -70,7 +70,7 @@ interface JoinRuleInterface
     public function assertItem(array $item): bool;
 
     /**
-     * @param $data
+     * @param array $data
      * @return mixed
      */
     public function filterData(&$data);

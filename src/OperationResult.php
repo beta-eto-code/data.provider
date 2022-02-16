@@ -5,6 +5,8 @@ namespace Data\Provider;
 use Data\Provider\Interfaces\OperationResultInterface;
 use Data\Provider\Interfaces\PkOperationResultInterface;
 use EmptyIterator;
+use Exception;
+use Generator;
 use Iterator;
 use Traversable;
 
@@ -23,10 +25,15 @@ class OperationResult implements PkOperationResultInterface
      */
     private $pk;
     /**
-     * @var OperationResultInterface
+     * @var OperationResultInterface|null
      */
     private $next;
 
+    /**
+     * @param string|null $errorMessage
+     * @param mixed $data
+     * @param mixed $pk
+     */
     public function __construct(string $errorMessage = null, $data = null, $pk = null)
     {
         $this->errorMessage = $errorMessage;
@@ -44,7 +51,7 @@ class OperationResult implements PkOperationResultInterface
             $this->next->addNext($operationResult);
             return;
         }
-        
+
         $this->next = $operationResult;
     }
 
@@ -90,7 +97,10 @@ class OperationResult implements PkOperationResultInterface
     }
 
     /**
-     * @return OperationResultInterface[]|Traversable
+     * @return Generator
+     *
+     * @psalm-return Generator<int, mixed|static, mixed, void>
+     * @throws Exception
      */
     public function getIterator()
     {
@@ -104,7 +114,10 @@ class OperationResult implements PkOperationResultInterface
     }
 
     /**
-     * @return Iterator
+     * @return Generator
+     *
+     * @psalm-return Generator<int, OperationResultInterface, mixed, EmptyIterator>
+     * @throws Exception
      */
     public function getErrorIterator(): Iterator
     {
@@ -119,6 +132,8 @@ class OperationResult implements PkOperationResultInterface
 
     /**
      * @return int
+     *
+     * @psalm-return 0|positive-int
      */
     public function getResultCount(): int
     {
@@ -127,6 +142,9 @@ class OperationResult implements PkOperationResultInterface
 
     /**
      * @return int
+     *
+     * @psalm-return 0|positive-int
+     * @throws Exception
      */
     public function getErrorResultCount(): int
     {

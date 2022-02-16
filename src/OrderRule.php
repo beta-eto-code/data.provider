@@ -33,15 +33,17 @@ class OrderRule implements OrderRuleInterface
 
     /**
      * @return Closure
+     *
+     * @psalm-return Closure(mixed, mixed):(-1|1)
      */
     private function internalSort(): Closure
     {
         $ruleCount = count($this->orderList);
-        return function($a, $b) use ($ruleCount) {
+        return function ($a, $b) use ($ruleCount) {
             $aResult = 0;
             $bResult = 0;
             $index = 0;
-            foreach($this->orderList as $key => $data) {
+            foreach ($this->orderList as $key => $data) {
                 $isAscending = (bool)$data['isAscending'];
                 $aValue = $a[$key] ?? 0;
                 $bValue = $b[$key] ?? 0;
@@ -49,10 +51,10 @@ class OrderRule implements OrderRuleInterface
                 if (
                     ($isAscending && $aValue < $bValue) ||
                     (!$isAscending && $aValue > $bValue)
-                ){
-                    $aResult += 1 << ($ruleCount-$index);
+                ) {
+                    $aResult += 1 << ($ruleCount - $index);
                 } else {
-                    $bResult += 1 << ($ruleCount-$index);
+                    $bResult += 1 << ($ruleCount - $index);
                 }
 
                 $index++;

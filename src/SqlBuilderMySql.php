@@ -11,14 +11,14 @@ class SqlBuilderMySql extends SqlBuilderBase
      * @param QueryCriteriaInterface $queryCriteria
      * @param string $tableName
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildSelectQuery(
         QueryCriteriaInterface $queryCriteria,
         string $tableName,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $selectBlock = $this->buildSelectBlock($queryCriteria, $tableName, $usePlaceholder);
         $joinBlock = $this->buildJoinBlock($queryCriteria, $tableName, $usePlaceholder);
         $whereBlock = $this->buildWhereBlock($queryCriteria, $usePlaceholder);
@@ -49,14 +49,14 @@ class SqlBuilderMySql extends SqlBuilderBase
      * @param QueryCriteriaInterface $queryCriteria
      * @param string $tableName
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildDeleteQuery(
         QueryCriteriaInterface $queryCriteria,
         string $tableName,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $joinBlock = $this->buildJoinBlock($queryCriteria, $tableName, $usePlaceholder);
         $whereBlock = $this->buildWhereBlock($queryCriteria, $usePlaceholder);
         $orderBlock = $this->buildOrderBlock($queryCriteria->getOrderBy(), $usePlaceholder);
@@ -81,7 +81,8 @@ class SqlBuilderMySql extends SqlBuilderBase
      * @param array $data
      * @param string $tableName
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildInsertQuery(array $data, string $tableName, bool $usePlaceholder = false): SqlQueryInterface
     {
@@ -89,7 +90,7 @@ class SqlBuilderMySql extends SqlBuilderBase
         $values = array_values($data);
         $strValues = $this->prepareCauseValue($values, $usePlaceholder);
 
-        $sql = "INSERT INTO {$tableName} (".implode(',', $keys).") VALUES {$strValues}";
+        $sql = "INSERT INTO {$tableName} (" . implode(',', $keys) . ") VALUES {$strValues}";
 
         return new SqlQuery($sql, $values, $keys);
     }
@@ -99,15 +100,15 @@ class SqlBuilderMySql extends SqlBuilderBase
      * @param array $data
      * @param string $tableName
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildUpdateQuery(
         QueryCriteriaInterface $queryCriteria,
         array $data,
         string $tableName,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $joinBlock = $this->buildJoinBlock($queryCriteria, $tableName, $usePlaceholder);
         $whereBlock = $this->buildWhereBlock($queryCriteria, $usePlaceholder);
         $orderBlock = $this->buildOrderBlock($queryCriteria->getOrderBy(), $usePlaceholder);
@@ -125,10 +126,11 @@ class SqlBuilderMySql extends SqlBuilderBase
 
         $setList = [];
         foreach ($data as $key => $value) {
-            $setList[] = "{$key} = ".$this->prepareCauseValue($value, $usePlaceholder);
+            $setList[] = "{$key} = " . $this->prepareCauseValue($value, $usePlaceholder);
         }
 
-        $sql = "UPDATE {$tableName} {$joinBlock} SET ".implode(', ', $setList). " {$whereBlock} {$orderBlock} {$limitOffsetBlock}";
+        $sql = "UPDATE {$tableName} {$joinBlock} SET " . implode(', ', $setList)
+            . " {$whereBlock} {$orderBlock} {$limitOffsetBlock}";
 
         return new SqlQuery($sql, $values, $keys);
     }

@@ -30,7 +30,8 @@ class ArrayDataProvider extends BaseFileDataProvider
 
     /**
      * @param array $dataList
-     * @return bool
+     *
+     * @return true
      */
     protected function saveDataList(array $dataList): bool
     {
@@ -40,7 +41,8 @@ class ArrayDataProvider extends BaseFileDataProvider
 
     /**
      * @param array|ArrayObject $data
-     * @return bool
+     *
+     * @return true
      */
     protected function appendData($data): bool
     {
@@ -50,10 +52,11 @@ class ArrayDataProvider extends BaseFileDataProvider
 
     /**
      * @return string
+     *
+     * @psalm-return 'internal array'
      */
     public function getSourceName(): string
     {
         return 'internal array';
     }
-
 }

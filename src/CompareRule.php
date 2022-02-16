@@ -34,6 +34,12 @@ class CompareRule implements CompareRuleInterface
      */
     private $and;
 
+    /**
+     * @param string $name
+     * @param string $operation
+     * @param mixed $value
+     * @param string|null $alias
+     */
     public function __construct(string $name, string $operation, $value, ?string $alias = null)
     {
         $this->name = $name;
@@ -69,7 +75,7 @@ class CompareRule implements CompareRuleInterface
     }
 
     /**
-     * @param $modelValue
+     * @param mixed $modelValue
      * @return bool
      * @throws Exception
      */
@@ -167,7 +173,7 @@ class CompareRule implements CompareRuleInterface
         }
 
         if ($result) {
-            foreach($this->and as $compareRule) {
+            foreach ($this->and as $compareRule) {
                 if (!$compareRule->assertWithData($data)) {
                     $result = false;
                     break;
@@ -176,7 +182,7 @@ class CompareRule implements CompareRuleInterface
         }
 
         if (!$result) {
-            foreach($this->or as $compareRule) {
+            foreach ($this->or as $compareRule) {
                 if ($compareRule->assertWithData($data)) {
                     $result = true;
                     break;
@@ -190,9 +196,9 @@ class CompareRule implements CompareRuleInterface
     /**
      * @param string $name
      * @param string $operation
-     * @param $value
+     * @param mixed $value
      * @param string|null $alias
-     * @return CompareRuleInterface
+     * @return self
      */
     public function or(string $name, string $operation, $value, ?string $alias = null): CompareRuleInterface
     {
@@ -214,9 +220,9 @@ class CompareRule implements CompareRuleInterface
     /**
      * @param string $name
      * @param string $operation
-     * @param $value
+     * @param mixed $value
      * @param string|null $alias
-     * @return CompareRuleInterface
+     * @return self
      */
     public function and(string $name, string $operation, $value, ?string $alias = null): CompareRuleInterface
     {
@@ -252,18 +258,20 @@ class CompareRule implements CompareRuleInterface
     }
 
     /**
-     * @return array
+     * @return CompareRuleInterface[]
      */
     public function getOrList(): array
     {
-        return $this->or ?? [];
+        return $this->or;
     }
 
     /**
-     * @return array
+     * @return CompareRuleInterface[]
+     *
+     * @psalm-return array<CompareRuleInterface>
      */
     public function getAndList(): array
     {
-        return $this->and ?? [];
+        return $this->and;
     }
 }

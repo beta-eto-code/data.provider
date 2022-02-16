@@ -8,7 +8,7 @@ use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\Interfaces\SqlBuilderInterface;
 use Data\Provider\Interfaces\SqlQueryInterface;
 use Data\Provider\Interfaces\SqlRelationProviderInterface;
-use Nette\Utils\DateTime;
+use DateTime;
 
 abstract class SqlBuilderBase implements SqlBuilderInterface
 {
@@ -26,14 +26,14 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
      * @param QueryCriteriaInterface $queryCriteria
      * @param string $tableName
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildSelectBlock(
         QueryCriteriaInterface $queryCriteria,
         string $tableName,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $querySelect = $queryCriteria->getSelect();
         if (empty($querySelect)) {
             $sql = "SELECT * FROM {$tableName}";
@@ -45,7 +45,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $keys = [];
         $index = 1;
         foreach ($queryCriteria->getSelect() as $key => $fieldName) {
-            $keys[] = 'select_'.$index++;
+            $keys[] = 'select_' . $index++;
             if (is_string($key)) {
                 $fieldStrList[] = "{$fieldName} as {$key}";
                 $values[] = [$fieldName => $key];
@@ -62,8 +62,9 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      * @param bool $usePlaceholder
+     *
      * @return string
      */
     protected function prepareCauseValue($value, bool $usePlaceholder = false): string
@@ -95,8 +96,8 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             }
 
             return $usePlaceholder ?
-                '('. implode(',', array_fill(0, count($list), $this->placeholder)). ')' :
-                '('. implode(',', $list). ')';
+                '(' . implode(',', array_fill(0, count($list), $this->placeholder)) . ')' :
+                '(' . implode(',', $list) . ')';
         }
 
         return $usePlaceholder ? '?' : 'NULL';
@@ -105,35 +106,32 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param CompareRuleInterface $compareRule
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
      */
     protected function buildSimpleCompareRule(
         CompareRuleInterface $compareRule,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQuery {
         $alias = $compareRule->getAlias();
         $operation = $compareRule->getOperation();
         $compareValue = $compareRule->getCompareValue();
         $propertyName = !empty($alias) ? "{$alias}.{$compareRule->getKey()}" : $compareRule->getKey();
         switch ($operation) {
             case CompareRuleInterface::EQUAL:
-
-                $sql = $propertyName.(is_null($compareValue) ?
+                $sql = $propertyName . (is_null($compareValue) ?
                         ' IS NULL' :
-                        " = ". $this->prepareCauseValue($compareValue, $usePlaceholder));
+                        " = " . $this->prepareCauseValue($compareValue, $usePlaceholder));
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::NOT:
-                $sql = $propertyName.(is_null($compareValue) ?
+                $sql = $propertyName . (is_null($compareValue) ?
                         ' IS NOT NULL' :
-                        " <> ".$this->prepareCauseValue($compareValue, $usePlaceholder));
+                        " <> " . $this->prepareCauseValue($compareValue, $usePlaceholder));
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::LIKE:
                 if (!is_string($compareValue)) {
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' LIKE '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' LIKE ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::NOT_LIKE:
@@ -141,7 +139,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' NOT LIKE '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' NOT LIKE ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::LESS:
@@ -149,7 +147,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' < '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' < ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::MORE:
@@ -157,7 +155,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' > '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' > ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::LESS_OR_EQUAL:
@@ -165,7 +163,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' <= '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' <= ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::MORE_OR_EQUAL:
@@ -173,7 +171,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' >= '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' >= ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::IN:
@@ -181,7 +179,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' IN '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' IN ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::NOT_IN:
@@ -189,7 +187,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                     return new SqlQuery('');
                 }
 
-                $sql = $propertyName.' NOT IN '.$this->prepareCauseValue($compareValue, $usePlaceholder);
+                $sql = $propertyName . ' NOT IN ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$compareValue], [$propertyName]);
             case CompareRuleInterface::BETWEEN:
@@ -201,8 +199,8 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                 $firstValue = array_shift($value);
                 $secondValue = array_shift($value);
 
-                $sql =  $propertyName.' BETWEEN '.
-                    $this->prepareCauseValue($firstValue, $usePlaceholder).' AND '.
+                $sql =  $propertyName . ' BETWEEN ' .
+                    $this->prepareCauseValue($firstValue, $usePlaceholder) . ' AND ' .
                     $this->prepareCauseValue($secondValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$firstValue, $secondValue], [$propertyName, $propertyName]);
@@ -215,8 +213,8 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                 $firstValue = array_shift($value);
                 $secondValue = array_shift($value);
 
-                $sql =  $propertyName.'NOT BETWEEN '.
-                    $this->prepareCauseValue($firstValue, $usePlaceholder).' AND '.
+                $sql =  $propertyName . 'NOT BETWEEN ' .
+                    $this->prepareCauseValue($firstValue, $usePlaceholder) . ' AND ' .
                     $this->prepareCauseValue($secondValue, $usePlaceholder);
 
                 return new SqlQuery($sql, [$firstValue, $secondValue], [$propertyName, $propertyName]);
@@ -228,13 +226,11 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param CompareRuleInterface $compareRule
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
      */
     protected function buildComplexCompareRule(
         CompareRuleInterface $compareRule,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQuery {
         $sqlQuery = $this->buildSimpleCompareRule($compareRule, $usePlaceholder);
         if (!$compareRule->isComplex()) {
             return $sqlQuery;
@@ -245,7 +241,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $keys = $sqlQuery->getKeys();
 
         $sqlAndBlocks = [];
-        foreach($compareRule->getAndList() as $cr) {
+        foreach ($compareRule->getAndList() as $cr) {
             $sq = $this->buildComplexCompareRule($cr, $usePlaceholder);
             $sqlAndBlocks[] = (string)$sq;
             $values = array_merge($values, $sq->getValues());
@@ -253,11 +249,11 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         }
 
         if (count($sqlAndBlocks) > 0) {
-            $sqlCause = "(".implode(' AND ', array_merge([$sqlCause], $sqlAndBlocks)).")";
+            $sqlCause = "(" . implode(' AND ', array_merge([$sqlCause], $sqlAndBlocks)) . ")";
         }
 
         $sqlOrBlocks = [];
-        foreach($compareRule->getOrList() as $cr) {
+        foreach ($compareRule->getOrList() as $cr) {
             $sq = $this->buildComplexCompareRule($cr, $usePlaceholder);
             $sqlOrBlocks[] = (string)$sq;
             $values = array_merge($values, $sq->getValues());
@@ -265,7 +261,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         }
 
         if (count($sqlOrBlocks) > 0) {
-            $sqlCause = "(".implode(' OR ', array_merge([$sqlCause], $sqlOrBlocks)).")";
+            $sqlCause = "(" . implode(' OR ', array_merge([$sqlCause], $sqlOrBlocks)) . ")";
         }
 
         return new SqlQuery($sqlCause, $values, $keys);
@@ -274,13 +270,13 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param QueryCriteriaInterface $queryCriteria
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildWhereBlock(
         QueryCriteriaInterface $queryCriteria,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $buildList = [];
         $values = [];
         $keys = [];
@@ -297,7 +293,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             return new SqlQuery('');
         }
 
-        $sql = ' WHERE '.implode(' AND ', $buildList);
+        $sql = ' WHERE ' . implode(' AND ', $buildList);
 
         return new SqlQuery($sql, $values, $keys);
     }
@@ -305,13 +301,13 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param QueryCriteriaInterface $queryCriteria
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildLimitOffsetBlock(
         QueryCriteriaInterface $queryCriteria,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $limit = $queryCriteria->getLimit();
         $offset = $queryCriteria->getOffset();
 
@@ -336,15 +332,15 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param QueryCriteriaInterface $queryCriteria
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildGroupBlock(
         QueryCriteriaInterface $queryCriteria,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $groupList = $queryCriteria->getGroup();
-        if (empty($group)) {
+        if (empty($groupList)) {
             return new SqlQuery('');
         }
 
@@ -358,14 +354,14 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
      * @param QueryCriteriaInterface $queryCriteria
      * @param string $tableName
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildJoinBlock(
         QueryCriteriaInterface $queryCriteria,
         string $tableName,
         bool $usePlaceholder = false
-    ): SqlQueryInterface
-    {
+    ): SqlQueryInterface {
         $joinStrList = [];
         $values = [];
         $keys = [];
@@ -381,7 +377,8 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             $foreignKey = $joinRule->getForeignKey();
 
             $buildList = [];
-            $joinStr = "{$joinRule->getType()} JOIN {$sourceName} {$alias} ON ".($alias ?? $sourceName).".{$destKey} = {$tableName}.{$foreignKey}";
+            $joinStr = "{$joinRule->getType()} JOIN {$sourceName} {$alias} ON " . ($alias ?? $sourceName)
+                . ".{$destKey} = {$tableName}.{$foreignKey}";
 
             $joinQuery = $joinRule->getQueryCriteria();
             if ($joinQuery instanceof QueryCriteriaInterface) {
@@ -396,7 +393,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             }
 
             if (!empty($buildList)) {
-                $joinStr .= ' AND ('.implode(' AND ', $buildList).')';
+                $joinStr .= ' AND (' . implode(' AND ', $buildList) . ')';
             }
 
             $joinStrList[] = $joinStr;
@@ -410,7 +407,8 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param OrderRuleInterface $orderRule
      * @param bool $usePlaceholder
-     * @return SqlQueryInterface
+     *
+     * @return SqlQuery
      */
     public function buildOrderBlock(OrderRuleInterface $orderRule, bool $usePlaceholder = false): SqlQueryInterface
     {
@@ -421,7 +419,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $values = [];
         $keys = [];
         $strList = [];
-        foreach($orderRule->getOrderData() as $key => $data) {
+        foreach ($orderRule->getOrderData() as $key => $data) {
             $isAscending = (bool)$data['isAscending'];
             $alias = $data['alias'] ? "{$data['alias']}." : "";
             $strList[] = "{$alias}{$key} " . ($isAscending ? 'ASC' : 'DESC');

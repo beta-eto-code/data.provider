@@ -20,8 +20,7 @@ class MigrateResult implements MigrateResultInterface
     public function __construct(
         QueryCriteriaInterface $query,
         array $resultList
-    )
-    {
+    ) {
         $this->query = $query;
         $this->resultList = $resultList;
     }
@@ -36,6 +35,8 @@ class MigrateResult implements MigrateResultInterface
 
     /**
      * @return array
+     *
+     * @psalm-return list<mixed>
      */
     public function getSourceData(): array
     {
@@ -82,6 +83,8 @@ class MigrateResult implements MigrateResultInterface
 
     /**
      * @return array
+     *
+     * @psalm-return list<mixed>
      */
     public function getUnimportedDataList(): array
     {

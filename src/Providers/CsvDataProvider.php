@@ -38,6 +38,7 @@ class CsvDataProvider extends BaseFileDataProvider
         $this->separator = $separator;
         $this->enclusure = $enclosure;
         $this->escape = $escape;
+        $this->headers = [];
     }
 
     /**
@@ -69,8 +70,10 @@ class CsvDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @param $file
-     * @return array|bool
+     * @param resource $file
+     *
+     * @return array|false (null|string)[]|false|null
+     *
      */
     private function getCsvRow($file)
     {
@@ -100,7 +103,9 @@ class CsvDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @return array
+     * @return array[]
+     *
+     * @psalm-return list<array>
      */
     protected function readDataFromFile(): array
     {
@@ -131,7 +136,8 @@ class CsvDataProvider extends BaseFileDataProvider
 
     /**
      * @param array $dataList
-     * @return bool
+     *
+     * @return true
      */
     protected function saveDataList(array $dataList): bool
     {
@@ -150,6 +156,8 @@ class CsvDataProvider extends BaseFileDataProvider
     /**
      * @param array $data
      * @return bool
+     *
+     * @psalm-suppress MoreSpecificImplementedParamType
      */
     protected function appendData($data): bool
     {
@@ -198,9 +206,10 @@ class CsvDataProvider extends BaseFileDataProvider
     }
 
     /**
-     * @param $file
+     * @param resource $file
      * @param array $data
-     * @return int|bool
+     *
+     * @return false|int
      */
     private function saveItem($file, array $data)
     {

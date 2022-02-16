@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Data\Provider\Interfaces;
-
 
 interface QueryCriteriaInterface
 {
@@ -84,7 +82,7 @@ interface QueryCriteriaInterface
     /**
      * @param string $name
      * @param string $operation
-     * @param $value
+     * @param mixed $value
      * @return CompareRuleInterface
      */
     public function addCriteria(string $name, string $operation, $value): CompareRuleInterface;

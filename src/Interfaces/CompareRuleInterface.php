@@ -1,23 +1,21 @@
 <?php
 
-
 namespace Data\Provider\Interfaces;
-
 
 interface CompareRuleInterface
 {
-    const LESS = '<';
-    const MORE = '>';
-    const EQUAL = '=';
-    const NOT = 'NOT';
-    const IN = 'IN';
-    const NOT_IN = 'NOT IN';
-    const LESS_OR_EQUAL = '<=';
-    const MORE_OR_EQUAL = '>=';
-    const LIKE = 'LIKE';
-    const NOT_LIKE = 'NOT LIKE';
-    const BETWEEN = 'BETWEEN';
-    const NOT_BETWEEN = 'NOT BETWEEN';
+    public const LESS = '<';
+    public const MORE = '>';
+    public const EQUAL = '=';
+    public const NOT = 'NOT';
+    public const IN = 'IN';
+    public const NOT_IN = 'NOT IN';
+    public const LESS_OR_EQUAL = '<=';
+    public const MORE_OR_EQUAL = '>=';
+    public const LIKE = 'LIKE';
+    public const NOT_LIKE = 'NOT LIKE';
+    public const BETWEEN = 'BETWEEN';
+    public const NOT_BETWEEN = 'NOT BETWEEN';
 
     /**
      * @return string
@@ -58,7 +56,7 @@ interface CompareRuleInterface
     /**
      * @param string $name
      * @param string $operation
-     * @param $value
+     * @param mixed $value
      * @param string|null $alias
      * @return CompareRuleInterface
      */
@@ -73,7 +71,7 @@ interface CompareRuleInterface
     /**
      * @param string $name
      * @param string $operation
-     * @param $value
+     * @param mixed $value
      * @param string|null $alias
      * @return CompareRuleInterface
      */
