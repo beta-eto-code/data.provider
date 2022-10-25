@@ -315,22 +315,16 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $limit = $queryCriteria->getLimit();
         $offset = $queryCriteria->getOffset();
 
-        $values = [];
-        $keys = [];
         $result = '';
         if ($limit > 0) {
-            $values[] = $limit;
-            $keys[] = 'limit';
             $result .= "LIMIT {$limit}";
         }
 
         if ($offset > 0) {
-            $values[] = $offset;
-            $keys[] = 'offset';
             $result .= " OFFSET {$offset}";
         }
 
-        return new SqlQuery($result, $values, $keys);
+        return new SqlQuery($result);
     }
 
     /**
