@@ -40,25 +40,29 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             return new SqlQuery($sql);
         }
 
-        $fieldStrList = [];
-        $values = [];
-        $keys = [];
-        $index = 1;
-        foreach ($queryCriteria->getSelect() as $key => $fieldName) {
-            $keys[] = 'select_' . $index++;
-            if (is_string($key)) {
-                $fieldStrList[] = "{$fieldName} as {$key}";
-                $values[] = [$fieldName => $key];
-            } else {
-                $fieldStrList[] = $fieldName;
-                $values[] = $fieldName;
-            }
-        }
-
+        $columns = $queryCriteria->getSelect();
+        $fieldStrList = $this->getColumnsDefinition($columns);
         $strSelect = implode(', ', $fieldStrList);
         $sql = "SELECT {$strSelect} FROM {$tableName}";
+        return new SqlQuery($sql);
+    }
 
-        return new SqlQuery($sql, $values, $keys);
+    /**
+     * @param  mixed $columns
+     * @return array
+     */
+    private function getColumnsDefinition(array $columns) : array
+    {
+        $result = [];
+        foreach ($columns as $alias => $columnName) {
+            if (is_string($alias)) {
+                $result[] = "{$columnName} as {$alias}";
+            }
+
+            $result[] = $columnName;
+        }
+
+        return $result;
     }
 
     /**
