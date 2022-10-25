@@ -178,10 +178,10 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                 if (is_null($compareValue)) {
                     return new SqlQuery('');
                 }
-
+                
                 $sql = $propertyName . ' IN ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
-                return new SqlQuery($sql, [$compareValue], [$propertyName]);
+                return new SqlQuery($sql, $compareValue, [$propertyName]);
             case CompareRuleInterface::NOT_IN:
                 if (is_null($compareValue)) {
                     return new SqlQuery('');
@@ -189,7 +189,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
 
                 $sql = $propertyName . ' NOT IN ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
-                return new SqlQuery($sql, [$compareValue], [$propertyName]);
+                return new SqlQuery($sql, $compareValue, [$propertyName]);
             case CompareRuleInterface::BETWEEN:
                 $value = $compareValue;
                 if (!is_array($value) || count($value) !== 2) {
@@ -281,7 +281,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $values = [];
         $keys = [];
         foreach ($queryCriteria->getCriteriaList() as $criteria) {
-            $sq = $this->buildComplexCompareRule($criteria);
+            $sq = $this->buildComplexCompareRule($criteria, $usePlaceholder);
             if (!$sq->isEmpty()) {
                 $buildList[] = (string)$sq;
                 $values = array_merge($values, $sq->getValues());
