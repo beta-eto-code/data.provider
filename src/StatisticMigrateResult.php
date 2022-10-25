@@ -10,6 +10,7 @@ class StatisticMigrateResult implements StatisticMigrateResultInterface
     private int $successCount;
     private int $errorCount;
     private ?MigrateResultInterface $migrateResult;
+    private string $resultMessage = '';
 
     public static function initFromMigrateResult(MigrateResultInterface $migrateResult): StatisticMigrateResultInterface
     {
@@ -44,6 +45,11 @@ class StatisticMigrateResult implements StatisticMigrateResultInterface
         $this->migrateResult = $migrateResult;
     }
 
+    public function setResultMessage(string $resultMessage): void
+    {
+        $this->resultMessage = $resultMessage;
+    }
+
     public function getSuccessCount(): int
     {
         return $this->successCount;
@@ -57,5 +63,9 @@ class StatisticMigrateResult implements StatisticMigrateResultInterface
     public function getMigrateResult(): ?MigrateResultInterface
     {
         return $this->migrateResult;
+    }
+    public function getResultMessage(): string
+    {
+        return $this->resultMessage;
     }
 }
