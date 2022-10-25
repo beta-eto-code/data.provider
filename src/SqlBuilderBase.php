@@ -351,7 +351,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $prepareValue = implode(', ', $groupList);
         $sql = "GROUP BY {$prepareValue}";
 
-        return new SqlQuery($sql, [$groupList], ['group']);
+        return new SqlQuery($sql);
     }
 
     /**
