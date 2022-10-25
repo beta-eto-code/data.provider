@@ -420,19 +420,15 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             return new SqlQuery('');
         }
 
-        $values = [];
-        $keys = [];
         $strList = [];
         foreach ($orderRule->getOrderData() as $key => $data) {
             $isAscending = (bool)$data['isAscending'];
             $alias = $data['alias'] ? "{$data['alias']}." : "";
             $strList[] = "{$alias}{$key} " . ($isAscending ? 'ASC' : 'DESC');
-            $values[] = ($isAscending ? 'ASC' : 'DESC');
-            $keys[] = "{$alias}{$key}";
         }
 
         $sql = "ORDER BY " . implode(', ', $strList);
 
-        return new SqlQuery($sql, $values, $keys);
+        return new SqlQuery($sql);
     }
 }
