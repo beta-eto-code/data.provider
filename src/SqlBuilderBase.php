@@ -57,9 +57,9 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         foreach ($columns as $alias => $columnName) {
             if (is_string($alias)) {
                 $result[] = "{$columnName} as {$alias}";
+            } else {
+                $result[] = $columnName;
             }
-
-            $result[] = $columnName;
         }
 
         return $result;
