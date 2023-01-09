@@ -2,7 +2,9 @@
 
 namespace Data\Provider\Tests;
 
+use Data\Provider\AndCompareRuleGroup;
 use Data\Provider\Interfaces\CompareRuleInterface;
+use Data\Provider\OrCompareRuleGroup;
 use Data\Provider\QueryCriteria;
 use Data\Provider\SqlBuilderMySql;
 use PHPUnit\Framework\TestCase;
@@ -76,6 +78,31 @@ class SqlBuilderMySqlTest extends TestCase
         $this->assertEquals(['id', 'title', 'sort', 1, 2], $sqlQuery->getValues());
         $this->assertEquals(
             "SELECT id, title, sort FROM some_table WHERE id > 1 LIMIT 2",
+            (string)$sqlQuery
+        );
+
+        $compareRule2 = OrCompareRuleGroup::create('name', CompareRuleInterface::EQUAL, 'test');
+        $compareRule2->add('name', CompareRuleInterface::EQUAL, 'test2');
+        $query->addCompareRule($compareRule2);
+        $sqlQuery = $sqlBuilder->buildSelectQuery($query, 'some_table');
+        $this->assertEquals(['select_1', 'select_2', 'select_3', 'id', 'name', 'name', 'limit'], $sqlQuery->getKeys());
+        $this->assertEquals(['id', 'title', 'sort', 1, 'test', 'test2', 2], $sqlQuery->getValues());
+        $this->assertEquals(
+            "SELECT id, title, sort FROM some_table WHERE id > 1 AND (name = 'test' OR name = 'test2') LIMIT 2",
+            (string)$sqlQuery
+        );
+
+        $compareRule3 = AndCompareRuleGroup::create('sort', CompareRuleInterface::MORE, 1);
+        $compareRule3->add('sort', CompareRuleInterface::LESS, 10);
+        $query->addCompareRule($compareRule3);
+        $sqlQuery = $sqlBuilder->buildSelectQuery($query, 'some_table');
+        $this->assertEquals(
+            ['select_1', 'select_2', 'select_3', 'id', 'name', 'name', 'sort', 'sort','limit'],
+            $sqlQuery->getKeys()
+        );
+        $this->assertEquals(['id', 'title', 'sort', 1, 'test', 'test2', 1, 10, 2], $sqlQuery->getValues());
+        $this->assertEquals(
+            "SELECT id, title, sort FROM some_table WHERE id > 1 AND (name = 'test' OR name = 'test2') AND (sort > 1 AND sort < 10) LIMIT 2",
             (string)$sqlQuery
         );
     }

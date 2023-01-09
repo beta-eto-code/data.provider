@@ -2,7 +2,10 @@
 
 namespace Data\Provider;
 
+use Data\Provider\Interfaces\CompareRuleGroupInterface;
 use Data\Provider\Interfaces\CompareRuleInterface;
+use Data\Provider\Interfaces\ComplexAndCompareRuleInterface;
+use Data\Provider\Interfaces\ComplexOrCompareRuleInterface;
 use Data\Provider\Interfaces\OrderRuleInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 use Data\Provider\Interfaces\SqlBuilderInterface;
@@ -106,6 +109,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param CompareRuleInterface $compareRule
      * @param bool $usePlaceholder
+     * @return SqlQuery
      */
     protected function buildSimpleCompareRule(
         CompareRuleInterface $compareRule,
@@ -226,11 +230,16 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
     /**
      * @param CompareRuleInterface $compareRule
      * @param bool $usePlaceholder
+     * @return SqlQuery
      */
     protected function buildComplexCompareRule(
         CompareRuleInterface $compareRule,
         bool $usePlaceholder = false
     ): SqlQuery {
+        if ($compareRule instanceof CompareRuleGroupInterface) {
+            return $this->buildCompareRuleGroup($compareRule, $usePlaceholder);
+        }
+
         $sqlQuery = $this->buildSimpleCompareRule($compareRule, $usePlaceholder);
         if (!$compareRule->isComplex()) {
             return $sqlQuery;
@@ -241,23 +250,30 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $keys = $sqlQuery->getKeys();
 
         $sqlAndBlocks = [];
-        foreach ($compareRule->getAndList() as $cr) {
-            $sq = $this->buildComplexCompareRule($cr, $usePlaceholder);
-            $sqlAndBlocks[] = (string)$sq;
-            $values = array_merge($values, $sq->getValues());
-            $keys = array_merge($keys, $sq->getKeys());
+        if ($compareRule instanceof ComplexAndCompareRuleInterface) {
+            foreach ($compareRule->getAndList() as $cr) {
+                $sq = $this->buildComplexCompareRule($cr, $usePlaceholder);
+                $sqlAndBlocks[] = (string)$sq;
+                $values = array_merge($values, $sq->getValues());
+                $keys = array_merge($keys, $sq->getKeys());
+            }
         }
 
+        /**
+         * @psalm-suppress RedundantCondition
+         */
         if (count($sqlAndBlocks) > 0) {
             $sqlCause = "(" . implode(' AND ', array_merge([$sqlCause], $sqlAndBlocks)) . ")";
         }
 
         $sqlOrBlocks = [];
-        foreach ($compareRule->getOrList() as $cr) {
-            $sq = $this->buildComplexCompareRule($cr, $usePlaceholder);
-            $sqlOrBlocks[] = (string)$sq;
-            $values = array_merge($values, $sq->getValues());
-            $keys = array_merge($keys, $sq->getKeys());
+        if ($compareRule instanceof ComplexOrCompareRuleInterface) {
+            foreach ($compareRule->getOrList() as $cr) {
+                $sq = $this->buildComplexCompareRule($cr, $usePlaceholder);
+                $sqlOrBlocks[] = (string)$sq;
+                $values = array_merge($values, $sq->getValues());
+                $keys = array_merge($keys, $sq->getKeys());
+            }
         }
 
         if (count($sqlOrBlocks) > 0) {
@@ -265,6 +281,30 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         }
 
         return new SqlQuery($sqlCause, $values, $keys);
+    }
+
+    private function buildCompareRuleGroup(
+        CompareRuleGroupInterface $compareRuleGroup,
+        bool $usePlaceholder = false
+    ): SqlQuery {
+        $sqlBlocks = [];
+        $values = [];
+        $keys = [];
+        foreach ($compareRuleGroup->getList() as $compareRule) {
+            $sq = $this->buildComplexCompareRule($compareRule, $usePlaceholder);
+            $sqlBlocks[] = (string)$sq;
+            $values = array_merge($values, $sq->getValues());
+            $keys = array_merge($keys, $sq->getKeys());
+        }
+
+        if (count($sqlBlocks) > 0) {
+            $ruleSeparator =  $compareRuleGroup instanceof OrCompareRuleGroup ? ' OR ' : ' AND ';
+            $sqlCause = "(" . implode($ruleSeparator, $sqlBlocks) . ")";
+        } else {
+            $sqlCause = current($sqlBlocks);
+        }
+
+        return new SqlQuery($sqlCause ?: '', $values, $keys);
     }
 
     /**

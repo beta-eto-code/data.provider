@@ -64,7 +64,10 @@ class XmlDataProvider extends BaseFileDataProvider
 
         for ($rootNode->rewind(); $rootNode->valid(); $rootNode->next()) {
             $value = $rootNode->current();
-            if ($value !== null) {
+            /**
+             * @psalm-suppress RedundantConditionGivenDocblockType
+             */
+            if ($value instanceof SimpleXMLIterator) {
                 $resultList[] = $this->readItem($value);
             }
         }
@@ -121,6 +124,7 @@ class XmlDataProvider extends BaseFileDataProvider
     /**
      * @param SimpleXMLIterator $rootNode
      * @return SimpleXMLIterator|SimpleXMLElement|null
+     * @psalm-suppress LessSpecificReturnType
      */
     private function getListNode(SimpleXMLIterator $rootNode): ?SimpleXMLElement
     {
@@ -173,11 +177,20 @@ class XmlDataProvider extends BaseFileDataProvider
                 continue;
             }
 
+            /**
+             * @psalm-suppress PossiblyFalseArgument
+             */
             if (!array_key_exists($key, $result)) {
                 if ($xmlElement->hasChildren()) {
                     if ($key === $this->arrayItemDefaultKey) {
+                        /**
+                         * @psalm-suppress ArgumentTypeCoercion
+                         */
                         $result[] = $this->readItems($xmlElementValue);
                     } else {
+                        /**
+                         * @psalm-suppress ArgumentTypeCoercion
+                         */
                         $result[$key] = $this->readItems($xmlElementValue);
                     }
                 } else {

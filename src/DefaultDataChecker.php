@@ -2,6 +2,7 @@
 
 namespace Data\Provider;
 
+use Data\Provider\Interfaces\AssertableDataInterface;
 use Data\Provider\Interfaces\DataCheckerInterface;
 use Data\Provider\Interfaces\QueryCriteriaInterface;
 
@@ -39,7 +40,7 @@ class DefaultDataChecker implements DataCheckerInterface
         }
 
         foreach ($this->query->getCriteriaList() as $compareRule) {
-            if (!$compareRule->assertWithData($data)) {
+            if ($compareRule instanceof AssertableDataInterface && !$compareRule->assertWithData($data)) {
                 return false;
             }
         }

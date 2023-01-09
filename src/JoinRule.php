@@ -3,6 +3,7 @@
 namespace Data\Provider;
 
 use Bitrix\Crm\ConfigChecker\Iterator;
+use Data\Provider\Interfaces\AssertableDataInterface;
 use Data\Provider\Interfaces\CompareRuleInterface;
 use Data\Provider\Interfaces\DataProviderInterface;
 use Data\Provider\Interfaces\JoinRuleInterface;
@@ -225,7 +226,8 @@ class JoinRule implements JoinRuleInterface
             return false;
         }
 
-        return $this->filterByJoinData->assertWithData($item);
+        return $this->filterByJoinData instanceof AssertableDataInterface &&
+            $this->filterByJoinData->assertWithData($item);
     }
 
     /**

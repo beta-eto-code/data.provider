@@ -2,37 +2,23 @@
 
 namespace Data\Provider;
 
+use Data\Provider\Interfaces\AssertableDataInterface;
+use Data\Provider\Interfaces\CompareRuleGroupInterface;
 use Data\Provider\Interfaces\CompareRuleInterface;
-use DateTime;
-use DateTimeImmutable;
+use Data\Provider\Interfaces\ComplexAndCompareRuleInterface;
+use Data\Provider\Interfaces\ComplexOrCompareRuleInterface;
 use Exception;
 
-class CompareRule implements CompareRuleInterface
+class CompareRule extends SimpleCompareRule implements ComplexAndCompareRuleInterface, ComplexOrCompareRuleInterface
 {
     /**
-     * @var string
+     * @var CompareRuleGroupInterface|null
      */
-    private $name;
+    private $orGroup = null;
     /**
-     * @var string|null
+     * @var CompareRuleGroupInterface|null
      */
-    private $alias;
-    /**
-     * @var string
-     */
-    private $operation;
-    /**
-     * @var mixed
-     */
-    private $value;
-    /**
-     * @var CompareRuleInterface[]
-     */
-    private $or;
-    /**
-     * @var CompareRuleInterface[]
-     */
-    private $and;
+    private $andGroup = null;
 
     /**
      * @param string $name
@@ -42,122 +28,7 @@ class CompareRule implements CompareRuleInterface
      */
     public function __construct(string $name, string $operation, $value, ?string $alias = null)
     {
-        $this->name = $name;
-        $this->alias = $alias;
-        $this->operation = $operation;
-        $this->value = $value;
-        $this->or = [];
-        $this->and = [];
-    }
-
-    /**
-     * @return string
-     */
-    public function getKey(): string
-    {
-        return $this->name;
-    }
-
-    /**
-     * @return string
-     */
-    public function getOperation(): string
-    {
-        return $this->operation;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getCompareValue()
-    {
-        return $this->value;
-    }
-
-    /**
-     * @param mixed $modelValue
-     * @return bool
-     * @throws Exception
-     */
-    private function assertWithValue($modelValue): bool
-    {
-        $localValue = $this->value;
-        if ($localValue instanceof DateTime || $localValue instanceof DateTimeImmutable) {
-            $localValue = $localValue->getTimestamp();
-
-            $modelDate = DateTime::createFromFormat('Y-m-d H:i:s', $modelValue);
-            if (!$modelDate) {
-                $modelDate = new DateTime($modelValue) ?? null;
-            }
-            $modelValue = $modelDate instanceof DateTime ? $modelDate->getTimestamp() : 0;
-        }
-
-        switch ($this->operation) {
-            case CompareRuleInterface::NOT:
-                return $modelValue != $localValue;
-            case CompareRuleInterface::LIKE:
-                if (!is_string($modelValue)) {
-                    return false;
-                }
-
-                $value = str_replace('%', '', $localValue);
-                return stripos($modelValue, $value) !== false;
-            case CompareRuleInterface::NOT_LIKE:
-                if (!is_string($modelValue)) {
-                    return false;
-                }
-
-                $value = str_replace('%', '', $localValue);
-                return stripos($modelValue, $value) === false;
-            case CompareRuleInterface::LESS:
-                if (is_null($modelValue)) {
-                    return false;
-                }
-
-                return $modelValue < $localValue;
-            case CompareRuleInterface::MORE:
-                if (is_null($modelValue)) {
-                    return false;
-                }
-
-                return $modelValue > $localValue;
-            case CompareRuleInterface::LESS_OR_EQUAL:
-                if (is_null($modelValue)) {
-                    return false;
-                }
-
-                return $modelValue <= $localValue;
-            case CompareRuleInterface::MORE_OR_EQUAL:
-                if (is_null($modelValue)) {
-                    return false;
-                }
-
-                return $modelValue >= $localValue;
-            case CompareRuleInterface::IN:
-                return in_array($modelValue, (array)$localValue);
-            case CompareRuleInterface::NOT_IN:
-                return !in_array($modelValue, (array)$localValue);
-            case CompareRuleInterface::BETWEEN:
-                if (!is_array($modelValue) || count($modelValue) !== 2) {
-                    return false;
-                }
-
-                $firstValue = array_shift($modelValue);
-                $secondValue = array_shift($modelValue);
-
-                return $firstValue < $localValue && $localValue < $secondValue;
-            case CompareRuleInterface::NOT_BETWEEN:
-                if (!is_array($modelValue) || count($modelValue) !== 2) {
-                    return false;
-                }
-
-                $firstValue = array_shift($modelValue);
-                $secondValue = array_shift($modelValue);
-
-                return !($firstValue < $localValue) && !($localValue < $secondValue);
-        }
-
-        return $modelValue == $localValue;
+        parent::__construct($name, $operation, $value, $alias);
     }
 
     /**
@@ -167,27 +38,13 @@ class CompareRule implements CompareRuleInterface
      */
     public function assertWithData(array $data): bool
     {
-        $result = $this->assertWithValue($data[$this->name] ?? null);
-        if (!$this->isComplex()) {
-            return $result;
+        $result = parent::assertWithData($data);
+        if ($result && ($this->andGroup instanceof AssertableDataInterface)) {
+            $result = $this->andGroup->assertWithData($data);
         }
 
-        if ($result) {
-            foreach ($this->and as $compareRule) {
-                if (!$compareRule->assertWithData($data)) {
-                    $result = false;
-                    break;
-                }
-            }
-        }
-
-        if (!$result) {
-            foreach ($this->or as $compareRule) {
-                if ($compareRule->assertWithData($data)) {
-                    $result = true;
-                    break;
-                }
-            }
+        if (!$result && ($this->orGroup instanceof AssertableDataInterface)) {
+            $result = $this->orGroup->assertWithData($data);
         }
 
         return $result;
@@ -203,8 +60,7 @@ class CompareRule implements CompareRuleInterface
     public function or(string $name, string $operation, $value, ?string $alias = null): CompareRuleInterface
     {
         $compareRule = new CompareRule($name, $operation, $value, $alias);
-        $this->or[] = $compareRule;
-
+        $this->orCompareRule($compareRule);
         return $compareRule;
     }
 
@@ -214,7 +70,12 @@ class CompareRule implements CompareRuleInterface
      */
     public function orCompareRule(CompareRuleInterface $compareRule)
     {
-        $this->or[] = $compareRule;
+        if ($this->orGroup instanceof CompareRuleGroupInterface) {
+            $this->orGroup->addCompareRule($compareRule);
+            return;
+        }
+
+        $this->orGroup = new OrCompareRuleGroup($compareRule);
     }
 
     /**
@@ -226,9 +87,8 @@ class CompareRule implements CompareRuleInterface
      */
     public function and(string $name, string $operation, $value, ?string $alias = null): CompareRuleInterface
     {
-        $compareRule = new CompareRule($name, $operation, $value);
-        $this->and[] = $compareRule;
-
+        $compareRule = new CompareRule($name, $operation, $value, $alias);
+        $this->andCompareRule($compareRule);
         return $compareRule;
     }
 
@@ -238,7 +98,12 @@ class CompareRule implements CompareRuleInterface
      */
     public function andCompareRule(CompareRuleInterface $compareRule)
     {
-        $this->and[] = $compareRule;
+        if ($this->andGroup instanceof CompareRuleGroupInterface) {
+            $this->andGroup->addCompareRule($compareRule);
+            return;
+        }
+
+        $this->andGroup = new AndCompareRuleGroup($compareRule);
     }
 
     /**
@@ -246,15 +111,7 @@ class CompareRule implements CompareRuleInterface
      */
     public function isComplex(): bool
     {
-        return !empty($this->or) || !empty($this->and);
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getAlias(): ?string
-    {
-        return $this->alias;
+        return !empty($this->orGroup) || !empty($this->andGroup);
     }
 
     /**
@@ -262,7 +119,7 @@ class CompareRule implements CompareRuleInterface
      */
     public function getOrList(): array
     {
-        return $this->or;
+        return $this->orGroup instanceof CompareRuleGroupInterface ? $this->orGroup->getList() : [];
     }
 
     /**
@@ -272,6 +129,6 @@ class CompareRule implements CompareRuleInterface
      */
     public function getAndList(): array
     {
-        return $this->and;
+        return $this->andGroup instanceof CompareRuleGroupInterface ? $this->andGroup->getList() : [];
     }
 }
