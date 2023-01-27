@@ -43,25 +43,29 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             return new SqlQuery($sql);
         }
 
-        $fieldStrList = [];
-        $values = [];
-        $keys = [];
-        $index = 1;
-        foreach ($queryCriteria->getSelect() as $key => $fieldName) {
-            $keys[] = 'select_' . $index++;
-            if (is_string($key)) {
-                $fieldStrList[] = "{$fieldName} as {$key}";
-                $values[] = [$fieldName => $key];
+        $columns = $queryCriteria->getSelect();
+        $fieldStrList = $this->getColumnsDefinition($columns);
+        $strSelect = implode(', ', $fieldStrList);
+        $sql = "SELECT {$strSelect} FROM {$tableName}";
+        return new SqlQuery($sql);
+    }
+
+    /**
+     * @param  mixed $columns
+     * @return array
+     */
+    private function getColumnsDefinition(array $columns) : array
+    {
+        $result = [];
+        foreach ($columns as $alias => $columnName) {
+            if (is_string($alias)) {
+                $result[] = "{$columnName} as {$alias}";
             } else {
-                $fieldStrList[] = $fieldName;
-                $values[] = $fieldName;
+                $result[] = $columnName;
             }
         }
 
-        $strSelect = implode(', ', $fieldStrList);
-        $sql = "SELECT {$strSelect} FROM {$tableName}";
-
-        return new SqlQuery($sql, $values, $keys);
+        return $result;
     }
 
     /**
@@ -182,10 +186,10 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                 if (is_null($compareValue)) {
                     return new SqlQuery('');
                 }
-
+                
                 $sql = $propertyName . ' IN ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
-                return new SqlQuery($sql, [$compareValue], [$propertyName]);
+                return new SqlQuery($sql, $compareValue, [$propertyName]);
             case CompareRuleInterface::NOT_IN:
                 if (is_null($compareValue)) {
                     return new SqlQuery('');
@@ -193,7 +197,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
 
                 $sql = $propertyName . ' NOT IN ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
-                return new SqlQuery($sql, [$compareValue], [$propertyName]);
+                return new SqlQuery($sql, $compareValue, [$propertyName]);
             case CompareRuleInterface::BETWEEN:
                 $value = $compareValue;
                 if (!is_array($value) || count($value) !== 2) {
@@ -321,7 +325,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $values = [];
         $keys = [];
         foreach ($queryCriteria->getCriteriaList() as $criteria) {
-            $sq = $this->buildComplexCompareRule($criteria);
+            $sq = $this->buildComplexCompareRule($criteria, $usePlaceholder);
             if (!$sq->isEmpty()) {
                 $buildList[] = (string)$sq;
                 $values = array_merge($values, $sq->getValues());
@@ -351,22 +355,16 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $limit = $queryCriteria->getLimit();
         $offset = $queryCriteria->getOffset();
 
-        $values = [];
-        $keys = [];
         $result = '';
         if ($limit > 0) {
-            $values[] = $limit;
-            $keys[] = 'limit';
             $result .= "LIMIT {$limit}";
         }
 
         if ($offset > 0) {
-            $values[] = $offset;
-            $keys[] = 'offset';
             $result .= " OFFSET {$offset}";
         }
 
-        return new SqlQuery($result, $values, $keys);
+        return new SqlQuery($result);
     }
 
     /**
@@ -387,7 +385,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
         $prepareValue = implode(', ', $groupList);
         $sql = "GROUP BY {$prepareValue}";
 
-        return new SqlQuery($sql, [$groupList], ['group']);
+        return new SqlQuery($sql);
     }
 
     /**
@@ -456,19 +454,15 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
             return new SqlQuery('');
         }
 
-        $values = [];
-        $keys = [];
         $strList = [];
         foreach ($orderRule->getOrderData() as $key => $data) {
             $isAscending = (bool)$data['isAscending'];
             $alias = $data['alias'] ? "{$data['alias']}." : "";
             $strList[] = "{$alias}{$key} " . ($isAscending ? 'ASC' : 'DESC');
-            $values[] = ($isAscending ? 'ASC' : 'DESC');
-            $keys[] = "{$alias}{$key}";
         }
 
         $sql = "ORDER BY " . implode(', ', $strList);
 
-        return new SqlQuery($sql, $values, $keys);
+        return new SqlQuery($sql);
     }
 }
