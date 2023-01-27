@@ -79,7 +79,8 @@ abstract class BaseDataProvider implements DataProviderInterface
         }
 
         $result = [];
-        foreach ($query->getSelect() as $key) {
+        foreach ($query->getSelect() as $k => $v) {
+            $key = is_numeric($k) ? $v : $k;
             $result[$key] = $dataItem[$key] ?? null;
         }
 
