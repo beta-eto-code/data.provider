@@ -45,8 +45,8 @@ class SqlBuilderMySqlTest extends TestCase
         $query->setLimit(2);
         $sqlQuery = $sqlBuilder->buildUpdateQuery($query, $dataForUpdate, 'some_table');
 
-        $this->assertEquals(['title', 'sort', 'id', 'limit'], $sqlQuery->getKeys());
-        $this->assertEquals(['title 1', 20, 1, 2], $sqlQuery->getValues());
+        $this->assertEquals(['title', 'sort', 'id'], $sqlQuery->getKeys());
+        $this->assertEquals(['title 1', 20, 1], $sqlQuery->getValues());
         $this->assertEquals(
             "UPDATE some_table SET title = 'title 1', sort = 20 WHERE id > 1 LIMIT 2",
             (string)$sqlQuery
@@ -60,7 +60,7 @@ class SqlBuilderMySqlTest extends TestCase
         );
 
         $this->assertEquals(
-            "UPDATE some_table SET title = ?, sort = ? WHERE id > 1 LIMIT 2",
+            "UPDATE some_table SET title = ?, sort = ? WHERE id > ? LIMIT 2",
             (string)$placeholderSqlQuery
         );
     }
@@ -74,8 +74,8 @@ class SqlBuilderMySqlTest extends TestCase
         $query->setLimit(2);
         $sqlQuery = $sqlBuilder->buildSelectQuery($query, 'some_table');
 
-        $this->assertEquals(['select_1', 'select_2', 'select_3', 'id', 'limit'], $sqlQuery->getKeys());
-        $this->assertEquals(['id', 'title', 'sort', 1, 2], $sqlQuery->getValues());
+        $this->assertEquals(['id'], $sqlQuery->getKeys());
+        $this->assertEquals([1], $sqlQuery->getValues());
         $this->assertEquals(
             "SELECT id, title, sort FROM some_table WHERE id > 1 LIMIT 2",
             (string)$sqlQuery
@@ -85,8 +85,8 @@ class SqlBuilderMySqlTest extends TestCase
         $compareRule2->add('name', CompareRuleInterface::EQUAL, 'test2');
         $query->addCompareRule($compareRule2);
         $sqlQuery = $sqlBuilder->buildSelectQuery($query, 'some_table');
-        $this->assertEquals(['select_1', 'select_2', 'select_3', 'id', 'name', 'name', 'limit'], $sqlQuery->getKeys());
-        $this->assertEquals(['id', 'title', 'sort', 1, 'test', 'test2', 2], $sqlQuery->getValues());
+        $this->assertEquals(['id', 'name', 'name'], $sqlQuery->getKeys());
+        $this->assertEquals([1, 'test', 'test2'], $sqlQuery->getValues());
         $this->assertEquals(
             "SELECT id, title, sort FROM some_table WHERE id > 1 AND (name = 'test' OR name = 'test2') LIMIT 2",
             (string)$sqlQuery
@@ -97,10 +97,10 @@ class SqlBuilderMySqlTest extends TestCase
         $query->addCompareRule($compareRule3);
         $sqlQuery = $sqlBuilder->buildSelectQuery($query, 'some_table');
         $this->assertEquals(
-            ['select_1', 'select_2', 'select_3', 'id', 'name', 'name', 'sort', 'sort','limit'],
+            ['id', 'name', 'name', 'sort', 'sort'],
             $sqlQuery->getKeys()
         );
-        $this->assertEquals(['id', 'title', 'sort', 1, 'test', 'test2', 1, 10, 2], $sqlQuery->getValues());
+        $this->assertEquals([1, 'test', 'test2', 1, 10], $sqlQuery->getValues());
         $this->assertEquals(
             "SELECT id, title, sort FROM some_table WHERE id > 1 AND (name = 'test' OR name = 'test2') AND (sort > 1 AND sort < 10) LIMIT 2",
             (string)$sqlQuery
@@ -115,8 +115,8 @@ class SqlBuilderMySqlTest extends TestCase
         $query->setLimit(2);
         $sqlQuery = $sqlBuilder->buildDeleteQuery($query, 'some_table');
 
-        $this->assertEquals(['id', 'limit'], $sqlQuery->getKeys());
-        $this->assertEquals([1, 2], $sqlQuery->getValues());$this->assertEquals(
+        $this->assertEquals(['id'], $sqlQuery->getKeys());
+        $this->assertEquals([1], $sqlQuery->getValues());$this->assertEquals(
         "DELETE FROM some_table WHERE id > 1 LIMIT 2",
         (string)$sqlQuery
     );

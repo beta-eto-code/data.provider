@@ -54,7 +54,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
      * @param  mixed $columns
      * @return array
      */
-    private function getColumnsDefinition(array $columns) : array
+    private function getColumnsDefinition(array $columns): array
     {
         $result = [];
         foreach ($columns as $alias => $columnName) {
@@ -186,7 +186,7 @@ abstract class SqlBuilderBase implements SqlBuilderInterface
                 if (is_null($compareValue)) {
                     return new SqlQuery('');
                 }
-                
+
                 $sql = $propertyName . ' IN ' . $this->prepareCauseValue($compareValue, $usePlaceholder);
 
                 return new SqlQuery($sql, $compareValue, [$propertyName]);

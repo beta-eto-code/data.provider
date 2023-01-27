@@ -12,6 +12,7 @@ use Data\Provider\Interfaces\SqlRelationProviderInterface;
 use Data\Provider\OperationResult;
 use Data\Provider\QueryCriteria;
 use EmptyIterator;
+use Generator;
 use Iterator;
 use PDO;
 
@@ -67,9 +68,9 @@ class PdoDataProvider extends BaseDataProvider implements SqlRelationProviderInt
     /**
      * @param QueryCriteriaInterface|null $query
      *
-     * @return \Generator
+     * @return Generator
      *
-     * @psalm-return \Generator<int, array<string, null|scalar>, mixed, EmptyIterator>
+     * @psalm-return Generator<int, array<string, null|scalar>, mixed, EmptyIterator>
      */
     protected function getInternalIterator(QueryCriteriaInterface $query = null): Iterator
     {
