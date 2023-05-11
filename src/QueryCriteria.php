@@ -109,7 +109,7 @@ class QueryCriteria implements QueryCriteriaInterface
      */
     public function getCriteriaList(): array
     {
-        return $this->criteriaList;
+        return array_values($this->criteriaList);
     }
 
     /**
