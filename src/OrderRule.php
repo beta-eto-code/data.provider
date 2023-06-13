@@ -53,7 +53,7 @@ class OrderRule implements OrderRuleInterface
                     (!$isAscending && $aValue > $bValue)
                 ) {
                     $aResult += 1 << ($ruleCount - $index);
-                } else {
+                } elseif ($aValue != $bValue) {
                     $bResult += 1 << ($ruleCount - $index);
                 }
 
