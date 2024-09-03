@@ -95,15 +95,26 @@ class SimpleCompareRule implements CompareRuleInterface, AssertableDataInterface
                     return false;
                 }
 
-                $value = str_replace('%', '', $localValue);
-                return stripos($modelValue, $value) !== false;
+                foreach ((array)$localValue as $oneOfValue) {
+                    $value = str_replace('%', '', $oneOfValue);
+                    if (stripos($modelValue, $value) !== false) {
+                        return true;
+                    }
+                }
+
+                return false;
             case CompareRuleInterface::NOT_LIKE:
                 if (!is_string($modelValue)) {
                     return false;
                 }
 
-                $value = str_replace('%', '', $localValue);
-                return stripos($modelValue, $value) === false;
+                foreach ((array)$localValue as $oneOfValue) {
+                    $value = str_replace('%', '', $oneOfValue);
+                    if (stripos($modelValue, $value) !== false) {
+                        return false;
+                    }
+                }
+                return true;
             case CompareRuleInterface::LESS:
                 if (is_null($modelValue)) {
                     return false;
