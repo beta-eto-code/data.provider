@@ -144,23 +144,23 @@ class SimpleCompareRule implements CompareRuleInterface, AssertableDataInterface
             case CompareRuleInterface::NOT_IN:
                 return !in_array($modelValue, (array)$localValue);
             case CompareRuleInterface::BETWEEN:
-                if (!is_array($modelValue) || count($modelValue) !== 2) {
+                if (!is_array($localValue) || count($localValue) !== 2) {
                     return false;
                 }
 
-                $firstValue = array_shift($modelValue);
-                $secondValue = array_shift($modelValue);
+                $firstValue = array_shift($localValue);
+                $secondValue = array_shift($localValue);
 
-                return $firstValue < $localValue && $localValue < $secondValue;
+                return $firstValue < $modelValue && $modelValue < $secondValue;
             case CompareRuleInterface::NOT_BETWEEN:
-                if (!is_array($modelValue) || count($modelValue) !== 2) {
+                if (!is_array($localValue) || count($localValue) !== 2) {
                     return false;
                 }
 
-                $firstValue = array_shift($modelValue);
-                $secondValue = array_shift($modelValue);
+                $firstValue = array_shift($localValue);
+                $secondValue = array_shift($localValue);
 
-                return !($firstValue < $localValue) && !($localValue < $secondValue);
+                return !($firstValue < $modelValue) && !($modelValue < $secondValue);
         }
 
         return $modelValue == $localValue;
