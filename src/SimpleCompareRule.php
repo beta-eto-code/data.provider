@@ -80,11 +80,7 @@ class SimpleCompareRule implements CompareRuleInterface, AssertableDataInterface
         if ($localValue instanceof DateTime || $localValue instanceof DateTimeImmutable) {
             $localValue = $localValue->getTimestamp();
 
-            $modelDate = DateTime::createFromFormat('Y-m-d H:i:s', $modelValue);
-            if (!$modelDate) {
-                $modelDate = new DateTime($modelValue) ?? null;
-            }
-            $modelValue = $modelDate instanceof DateTime ? $modelDate->getTimestamp() : 0;
+            $modelValue = $this->processModelDateValue($modelValue);
         }
 
         switch ($this->operation) {
@@ -151,7 +147,13 @@ class SimpleCompareRule implements CompareRuleInterface, AssertableDataInterface
                 $firstValue = array_shift($localValue);
                 $secondValue = array_shift($localValue);
 
-                return $firstValue < $modelValue && $modelValue < $secondValue;
+                if ($firstValue instanceof DateTime || $firstValue instanceof DateTimeImmutable) {
+                    $firstValue = $firstValue->getTimestamp();
+                    $secondValue = $secondValue->getTimestamp();
+                    $modelValue = $this->processModelDateValue($modelValue);
+                }
+
+                return $firstValue <= $modelValue && $modelValue <= $secondValue;
             case CompareRuleInterface::NOT_BETWEEN:
                 if (!is_array($localValue) || count($localValue) !== 2) {
                     return false;
@@ -160,7 +162,13 @@ class SimpleCompareRule implements CompareRuleInterface, AssertableDataInterface
                 $firstValue = array_shift($localValue);
                 $secondValue = array_shift($localValue);
 
-                return !($firstValue < $modelValue) && !($modelValue < $secondValue);
+                if ($firstValue instanceof DateTime || $firstValue instanceof DateTimeImmutable) {
+                    $firstValue = $firstValue->getTimestamp();
+                    $secondValue = $secondValue->getTimestamp();
+                    $modelValue = $this->processModelDateValue($modelValue);
+                }
+
+                return !($firstValue <= $modelValue) && !($modelValue <= $secondValue);
         }
 
         return $modelValue == $localValue;
@@ -169,5 +177,16 @@ class SimpleCompareRule implements CompareRuleInterface, AssertableDataInterface
     public function isComplex(): bool
     {
         return false;
+    }
+
+    private function processModelDateValue($modelValue): int
+    {
+        $modelDate = DateTime::createFromFormat('Y-m-d H:i:s', $modelValue);
+        if (!$modelDate) {
+            $modelDate = new DateTime($modelValue) ?? null;
+        }
+        $modelValue = $modelDate instanceof DateTime ? $modelDate->getTimestamp() : 0;
+
+        return $modelValue;
     }
 }
